@@ -4,9 +4,12 @@ load_dotenv(find_dotenv(usecwd=True))
 import os
 import argparse
 import asyncio
-import shutil  
+import shutil
 from gum import gum
-from gum.observers import Screen
+
+from gum.observers.manual import Manual
+from gum.key_listener import get_key_listener
+
 
 class QueryAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -15,10 +18,11 @@ class QueryAction(argparse.Action):
         else:
             setattr(namespace, self.dest, values)
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description='GUM - A Python package with command-line interface')
     parser.add_argument('--user-name', '-u', type=str, help='The user name to use')
-    
+
     parser.add_argument(
         '--query', '-q',
         nargs='?',
@@ -34,7 +38,7 @@ def parse_args():
     parser.add_argument('--limit', '-l', type=int, help='Limit the number of results', default=10)
     parser.add_argument('--model', '-m', type=str, help='Model to use')
     parser.add_argument('--reset-cache', action='store_true', help='Reset the GUM cache and exit')  # Add this line
-    
+
     # Batching configuration arguments
     parser.add_argument('--min-batch-size', type=int, help='Minimum number of observations to trigger batch processing')
     parser.add_argument('--max-batch-size', type=int, help='Maximum number of observations per batch')
@@ -45,6 +49,7 @@ def parse_args():
         args.query = None
 
     return args
+
 
 async def main():
     args = parse_args()
@@ -62,9 +67,9 @@ async def main():
     model = args.model or os.getenv('MODEL_NAME') or 'gpt-4o-mini'
     user_name = args.user_name or os.getenv('USER_NAME')
 
-    # Batching configuration - follow same pattern as other args    
-    min_batch_size = args.min_batch_size or int(os.getenv('MIN_BATCH_SIZE', '5'))
-    max_batch_size = args.max_batch_size or int(os.getenv('MAX_BATCH_SIZE', '15'))
+    # Batching configuration - follow same pattern as other args #TODO: adjust for available models
+    min_batch_size = args.min_batch_size or int(os.getenv('MIN_BATCH_SIZE', '5')) # 5 -> 1
+    max_batch_size = args.max_batch_size or int(os.getenv('MAX_BATCH_SIZE', '15')) # 15 -> 1
 
     # you need one of: user_name for listening mode, --query, or --recent
     if user_name is None and args.query is None and not getattr(args, 'recent', False):
@@ -88,7 +93,7 @@ async def main():
         gum_instance = gum(user_name, model)
         await gum_instance.connect_db()
         result = await gum_instance.query(args.query, limit=args.limit)
-        
+
         # confidences / propositions / number of items returned
         print(f"\nFound {len(result)} results:")
         for prop, score in result:
@@ -101,18 +106,27 @@ async def main():
             print("-" * 80)
     else:
         print(f"Listening to {user_name} with model {model}")
-            
+
+        manual_observer = Manual(model_name=model, debug=True) #TODO: modfy debug
+        key_listener = get_key_listener(manual_observer)
+        key_listener.start()
+
         async with gum(
-            user_name, 
-            model, 
-            Screen(model),
-            min_batch_size=min_batch_size,
-            max_batch_size=max_batch_size
+                user_name,
+                model,
+                manual_observer,
+                min_batch_size=min_batch_size,
+                max_batch_size=max_batch_size
         ) as gum_instance:
-            await asyncio.Future()  # run forever (Ctrl-C to stop)
+            try:
+                await asyncio.Future()  # run forever (Ctrl-C to stop)
+            finally:
+                key_listener.stop()
+
 
 def cli():
     asyncio.run(main())
+
 
 if __name__ == '__main__':
     cli()
