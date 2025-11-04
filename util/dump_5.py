@@ -8,11 +8,11 @@ async def dump_db():
     
     async with Session() as session:
         # Get all propositions
-        props_result = await session.execute(select(Proposition))
+        props_result = await session.execute(select(Proposition).limit(5))
         props = props_result.scalars().all()
         
         # Get all observations
-        obs_result = await session.execute(select(Observation))
+        obs_result = await session.execute(select(Observation).limit(5))
         observations = obs_result.scalars().all()
         
         dump = {

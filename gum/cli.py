@@ -56,7 +56,7 @@ async def main():
 
     # Handle --reset-cache before anything else
     if getattr(args, 'reset_cache', False):
-        cache_dir = os.path.expanduser('~/.cache/gum/')
+        cache_dir = os.path.expanduser('../.cache/gum/')
         if os.path.exists(cache_dir):
             shutil.rmtree(cache_dir)
             print(f"Deleted cache directory: {cache_dir}")
