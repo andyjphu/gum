@@ -66,8 +66,8 @@ class gum:
         similar_prompt: str | None = None,
         revise_prompt: str | None = None,
         audit_prompt: str | None = None,
-        data_directory: str = "~/.cache/gum",
-        db_name: str = "gum.db",
+        data_directory: str = "./.cache/gum", #TODO: adjust later, or maybe put in env
+        db_name: str = "gum.db", 
         verbosity: int = logging.INFO,
         audit_enabled: bool = False,
         api_base: str | None = None,
@@ -221,7 +221,7 @@ class gum:
             # Wait for batch to be ready (event-driven, no polling!)
             await self.batcher.wait_for_batch_ready()
             
-            # Use lock to ensure batch processing runs synchronously
+            # Use lock to ensure batch processing runs synchronously, TODO: come back to this
             async with self._batch_processing_lock:
                 batch = self.batcher.pop_batch()
                 self.logger.info(f"Processing batch of {len(batch)} observations")
@@ -258,7 +258,7 @@ class gum:
                     )
                     session.add(observation)
                     observations.append(observation)
-                
+#                print("DEBUG OBS:", session, observations) #TODO: handle observation logging via local better
                 await session.flush()
                 
                 # Process the combined content
@@ -297,6 +297,8 @@ class gum:
             self.propose_prompt.replace("{user_name}", self.user_name)
             .replace("{inputs}", update.content)
         )
+        
+       # print("!DEBUG", prompt) TODO: modify
 
         schema = PropositionSchema.model_json_schema()
         rsp = await self.client.chat.completions.create(
@@ -343,7 +345,7 @@ class gum:
             for p in rel_props
         ]
         prompt_text = await self._build_relation_prompt(payload)
-
+      #  print("!DEBUG2",prompt_text)
         rsp = await self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt_text}],
@@ -414,12 +416,13 @@ class gum:
         """
         body = await self._build_revision_body(similar_cluster, related_obs)
         prompt = self.revise_prompt.replace("{body}", body)
+        #print("!DEBUG3", prompt)
         rsp = await self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             response_format=get_schema(PropositionSchema.model_json_schema()), 
         )
-        return json.loads(rsp.choices[0].message.content)["propositions"]
+        return json.loads(rsp.choices[0].message.content)["propositions"] #TODO: return here to log propositions
 
     async def _generate_and_search(
         self, session: AsyncSession, update: Update
@@ -463,6 +466,8 @@ class gum:
     async def _handle_identical(
         self, session, identical: list[Proposition], observations: list[Observation]
     ) -> None:
+        if identical:
+            print(f"Found {len(identical)} identical propositions.")
         for p in identical:
             for obs in observations:
                 await self._attach_obs_if_missing(p, obs, session)
@@ -473,7 +478,8 @@ class gum:
         similar: list[Proposition],
         observations: list[Observation],
     ) -> None:
-
+        if similar:
+            print(f"Found {len(similar)} similar propositions to revise.")
         if not similar:
             return
 
@@ -512,6 +518,8 @@ class gum:
     async def _handle_different(
         self, session, different: list[Proposition], observations: list[Observation]
     ) -> None:
+        if different:
+            print(f"Found {len(different)} new propositions.")
         for p in different:
             for obs in observations:
                 await self._attach_obs_if_missing(p, obs, session)
@@ -553,6 +561,7 @@ class gum:
             .replace("{user_name}", self.user_name)
         )
 
+       # print("!DEBUG4", prompt)
         rsp = await self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
@@ -572,6 +581,7 @@ class gum:
         return False
 
     async def _default_handler(self, observer: Observer, update: Update) -> None:
+        print(f"New observation from {observer.name}: {update.content}")
         self.logger.info(f"Processing update from {observer.name}")
 
         # add to batch
@@ -580,6 +590,7 @@ class gum:
             content=update.content,
             content_type=update.content_type
         )
+        #print("\nDEBUG 8 OBS: ", observation_id, update.content, update.content_type)
         self.logger.info(f"Added observation {observation_id} to queue (size: {self.batcher.size()})")
 
     @asynccontextmanager

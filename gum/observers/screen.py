@@ -21,6 +21,9 @@ from pynput import mouse           # still synchronous
 from shapely.geometry import box
 from shapely.ops import unary_union
 
+
+print("<!2> IMPORTED SCREEN")
+
 # — Local —
 from .observer import Observer
 from ..schemas import Update
@@ -145,6 +148,8 @@ class Screen(Observer):
     _CAPTURE_FPS: int = 10
     _DEBOUNCE_SEC: int = 2
     _MON_START: int = 1     # first real display in mss
+    
+    print("<1!> RUNNING SCREEN")
 
     # ─────────────────────────────── construction
     def __init__(
@@ -194,7 +199,6 @@ class Screen(Observer):
         self.client = AsyncOpenAI(
             # try the class, then the env for screen, then the env for gum
             base_url=api_base or os.getenv("SCREEN_LM_API_BASE") or os.getenv("GUM_LM_API_BASE"), 
-
             # try the class, then the env for screen, then the env for GUM, then none
             api_key=api_key or os.getenv("SCREEN_LM_API_KEY") or os.getenv("GUM_LM_API_KEY") or os.getenv("OPENAI_API_KEY") or "None"
         )
