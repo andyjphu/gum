@@ -27,7 +27,7 @@ print("<!2> IMPORTED SCREEN")
 # — Local —
 from .observer import Observer
 from ..schemas import Update
-from invoke import invoke
+from ..invoke import invoke
 
 # — OpenAI async client —
 from openai import AsyncOpenAI
@@ -265,11 +265,12 @@ class Screen(Observer):
         #     messages=[{"role": "user", "content": content}],
         #     response_format={"type": "text"},
         # )
-        rsp = invoke(
+        rsp = await invoke(
             model=self.model_name,
             messages=[{"role": "user", "content": content}],
             response_format={"type": "text"}, 
-            debug_tag="[Screen] <Should not see>"
+            debug_tag="[Screen] <Should not see>",
+            client=self.client
         )
         
         return rsp.choices[0].message.content

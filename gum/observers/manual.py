@@ -38,7 +38,7 @@ from shapely.ops import unary_union
 # — Local —
 from .observer import Observer
 from ..schemas import Update
-from invoke import invoke
+from ..invoke import invoke
 from gum.prompts.screen import TRANSCRIPTION_PROMPT, SUMMARY_PROMPT #TODO: create new prompt file for manual capture observer
 
 ###############################################################################
@@ -51,6 +51,7 @@ DEFAULT_HISTORY_K = 10
 CAPTURE_INTERVAL_SEC = 10
 SHORT_SLEEP_SEC = 0.1
 JPEG_QUALITY = 70
+USER_MONITOR_INDEX = int(os.getenv("USER_MONITOR_INDEX", 1))
 
 ###############################################################################
 # Window geometry helpers                                                     #
@@ -210,6 +211,7 @@ class Manual(Observer):
             base_url=api_base or os.getenv("VLLM_ENDPOINT"),
             api_key=api_key or os.getenv("OPENAI_API_KEY") or "no-key"
         )
+        self.logger = logging.getLogger("Manual")
 
     # ─────────────────────────────── Recording control
 
@@ -217,13 +219,13 @@ class Manual(Observer):
         """Start the recording."""
         self._is_recording = True
         if self.debug:
-            print("[Manual] Recording started.")
+            self.logger.info("Recording started.")
 
     def stop_recording(self) -> None:
         """Stop the recording."""
         self._is_recording = False
         if self.debug:
-            print("[Manual] Recording stopped.")
+             self.logger.info("Recording stopped.")
 
     def toggle_recording(self) -> None:
         """Toggle the recording state."""
@@ -275,8 +277,7 @@ class Manual(Observer):
         content.append({"type": "text", "text": prompt})
 
         if self.debug:
-            print(f"[Manual] Sending {len(img_paths)} image(s) to vision API")
-            print(f"[Manual] Prompt: {prompt[:100]}...")
+             self.logger.info(f"Sending {len(img_paths)} image(s) to vision API")
 
         # Call API
         # rsp = await self.client.chat.completions.create(
@@ -284,16 +285,19 @@ class Manual(Observer):
         #     messages=[{"role": "user", "content": content}],
         #     response_format={"type": "text"},
         # )
-        rsp = invoke(
+        rsp = await invoke(
             model=self.model_name,
             messages=[{"role": "user", "content": content}],
             response_format={"type": "text"}, 
-            debug_tag="[Manual]"
+            debug_tag="[Manual]",
+            client=self.client,
         )
         
         result = rsp.choices[0].message.content
-        if self.debug:
-            print(f"[Manual] API response: {result[:100]}...")
+        
+        #TODO modify this.. too verbose?
+        self.logger.info(f"\n\n{"▇"*60}\nFor: \n{img_paths} \n\n {"▇ "*30} \n\n Received:\n {result[:100]} \n{"▇"*60}\n")
+            
             
         return result
 
@@ -329,7 +333,7 @@ class Manual(Observer):
         prev_paths = list(self._history)
 
         if self.debug:
-            print(f"[Manual] Processing screenshot: {path}")
+             self.logger.info(f"Processing screenshot: {path}")
 
         # Get transcription
         try:
@@ -340,7 +344,7 @@ class Manual(Observer):
         except Exception as exc:
             transcription = f"[transcription failed: {exc}]"
             if self.debug:
-                print(f"[Manual] Transcription error: {exc}")
+                 self.logger.info(f"Transcription error: {exc}")
 
         # Get summary
         try:
@@ -351,12 +355,12 @@ class Manual(Observer):
         except Exception as exc:
             summary = f"[summary failed: {exc}]"
             if self.debug:
-                print(f"[Manual] Summary error: {exc}")
+                 self.logger.info(f"Summary error: {exc}")
 
         # Emit combined result
         txt = (transcription + summary).strip()
         if self.debug:
-            print(f"[Manual] Emitting update: {txt[:100]}...")
+             self.logger.info(f"\n{"="*60}\nShowing result: {txt[:100]}\n{"="*60}\n") #TODO: modify trunc TODO wtf is this doing here
             
         await self.update_queue.put(
             Update(content=txt, content_type="input_text")
@@ -376,21 +380,18 @@ class Manual(Observer):
 
     async def _worker(self) -> None:
         """Main worker that captures and processes screenshots periodically."""
-        log = logging.getLogger("Manual")
+        logger = logging.getLogger("Manual")
         
-        if self.debug:
-            logging.basicConfig(
-                level=logging.INFO,
-                format="%(asctime)s [Manual] %(message)s",
-                datefmt="%H:%M:%S"
-            )
-        else:
-            log.addHandler(logging.NullHandler())
-            log.propagate = False
+        
+        if not logger.handlers:
+            h = logging.StreamHandler()
+            h.setFormatter(logging.Formatter("%(asctime)s - [VIA-MANUAL] - %(message)s"))
+            logger.addHandler(h)
+        
+        
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
 
-        log.info(
-            f"Manual observer started — guarding {self._guard or '∅'}"
-        )
 
         with mss.mss() as sct:
             while self._running:
@@ -401,22 +402,24 @@ class Manual(Observer):
 
                 # Check if we should skip this capture
                 if self._skip():
-                    log.info("Skipping capture (guarded app visible)")
+                    logger.info("Skipping capture (guarded app visible)")
                     await asyncio.sleep(CAPTURE_INTERVAL_SEC)
                     continue
 
                 # Capture screenshot
-                log.info("Capturing screenshot...")
-                monitor = sct.monitors[os.getenv('USER_MONITOR_INDEX')]  # Main monitor TODO: modify which is main monitor for other machines
+                logger.info("Capturing screenshot on monitor..." + str(USER_MONITOR_INDEX))
+
+                monitor = sct.monitors[USER_MONITOR_INDEX]  # Main monitor TODO: modify which is main monitor for other machines
+            
                 sct_img = sct.grab(monitor)
 
                 # Save and process
                 path = await self._save_frame(sct_img, "periodic")
                 await self._process_and_emit(path)
 
-                log.info("Screenshot captured and processed.")
+                logger.info("Screenshot captured and processed.")
 
                 # Wait before next capture
                 await asyncio.sleep(CAPTURE_INTERVAL_SEC)
 
-        log.info("Manual observer stopped.")
+        logger.info("Manual observer stopped.")

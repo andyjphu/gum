@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Callable, List
 from .models import observation_proposition
-from invoke import invoke
+from .invoke import invoke
 import traceback
 
 
@@ -311,8 +311,9 @@ class gum:
         rsp = await invoke(
             model = self.model, 
             messages= [{"role": "user", "content": prompt}], 
-            response_format=get_schema, 
-            debug_tag="[Proposition Construct]"
+            response_format=get_schema(schema), 
+            debug_tag="[Proposition Construct]",
+            client=self.client,
         )
 
 
@@ -364,7 +365,8 @@ class gum:
             model=self.model,
             messages=[{"role": "user", "content": prompt_text}],
             response_format=get_schema(RelationSchema.model_json_schema()),
-            debug_tag="[Proposition Filter]"
+            debug_tag="[Proposition Filter]",
+            client=self.client,
         )
 
 
@@ -442,8 +444,9 @@ class gum:
         rsp = await invoke(
             model = self.model, 
             messages=[{"role":"user","content":prompt}], 
-            response_format=get_schema(PropositionSchema.model_json_schema())
-            debug_tag="[Proposition Revise]"
+            response_format=get_schema(PropositionSchema.model_json_schema()),
+            debug_tag="[Proposition Revise]",
+            client=self.client,
         )
         
         return json.loads(rsp.choices[0].message.content)["propositions"] #TODO: return here to log propositions
@@ -598,7 +601,8 @@ class gum:
             messages=[{"role": "user", "content": prompt}],
             response_format=get_schema(AuditSchema.model_json_schema()),
             temperature=0.0,           
-            debug_tag="[Audit] <Should Not See>" 
+            debug_tag="[Audit] <Should Not See>" ,
+            client=self.client,
         )
         
         decision = json.loads(rsp.choices[0].message.content)
@@ -639,8 +643,8 @@ class gum:
             .prefix_with("OR IGNORE")
             .values(observation_id=obs.id, proposition_id=prop.id)
         )
-        prop.updated_at = datetime.now(timezone.utc)
-
+        # prop.updated_at = datetime.now(timezone.utc)
+        prop.updated_at = datetime.now().astimezone()            # TODO: unmodify(?) but this is system local time
     def add_observer(self, observer: Observer):
         """Add an observer to track user behavior.
         
