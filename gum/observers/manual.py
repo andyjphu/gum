@@ -38,6 +38,7 @@ from shapely.ops import unary_union
 # — Local —
 from .observer import Observer
 from ..schemas import Update
+from invoke import invoke
 from gum.prompts.screen import TRANSCRIPTION_PROMPT, SUMMARY_PROMPT #TODO: create new prompt file for manual capture observer
 
 ###############################################################################
@@ -45,7 +46,7 @@ from gum.prompts.screen import TRANSCRIPTION_PROMPT, SUMMARY_PROMPT #TODO: creat
 ###############################################################################
 
 DEFAULT_MODEL = "gpt-4o-mini"
-DEFAULT_SCREENSHOTS_DIR = "~/.cache/gum/screenshots"
+DEFAULT_SCREENSHOTS_DIR = "../../.cache/gum/screenshots" #TODO Add a flag to CLI for dynamic screenshot basing
 DEFAULT_HISTORY_K = 10
 CAPTURE_INTERVAL_SEC = 10
 SHORT_SLEEP_SEC = 0.1
@@ -279,10 +280,15 @@ class Manual(Observer):
             print(f"[Manual] Prompt: {prompt[:100]}...")
 
         # Call API
-        rsp = await self.client.chat.completions.create(
+        # rsp = await self.client.chat.completions.create(
+        #     model=self.model_name,
+        #     messages=[{"role": "user", "content": content}],
+        #     response_format={"type": "text"},
+        # )
+        rsp = invoke(
             model=self.model_name,
             messages=[{"role": "user", "content": content}],
-            response_format={"type": "text"},
+            response_format={"type": "text"}, 
         )
         
         result = rsp.choices[0].message.content

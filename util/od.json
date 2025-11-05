@@ -1,0 +1,81 @@
+{
+  "propositions": [
+    {
+      "id": 6,
+      "text": "Andrew is currently working on a website project for his course.",
+      "reasoning": "Andrew is currently working on a website project for his course, as evidenced by the presence of multiple files in the code editor and the ongoing coding process.",
+      "confidence": 10,
+      "decay": 10,
+      "version": 1,
+      "updated_at": "2025-11-05 06:11:36"
+    },
+    {
+      "id": 7,
+      "text": "Andrew is using Visual Studio Code to write HTML and CSS code for his website project.",
+      "reasoning": "Andrew is using Visual Studio Code to write HTML and CSS code for his website project, as seen in the code editor screenshot.",
+      "confidence": 10,
+      "decay": 10,
+      "version": 1,
+      "updated_at": "2025-11-05 06:11:36"
+    },
+    {
+      "id": 8,
+      "text": "Andrew is focusing on styling a quote section with a dark purple background and white text.",
+      "reasoning": "Andrew is focusing on styling a quote section with specific CSS properties, as shown in the quote.scss file.",
+      "confidence": 10,
+      "decay": 10,
+      "version": 1,
+      "updated_at": "2025-11-05 06:11:36"
+    },
+    {
+      "id": 9,
+      "text": "Andrew is collaborating with others while working on his website project.",
+      "reasoning": "Andrew is collaborating with others while working on his website project, as indicated by the presence of a video call window in the background.",
+      "confidence": 10,
+      "decay": 10,
+      "version": 1,
+      "updated_at": "2025-11-05 06:11:36"
+    },
+    {
+      "id": 10,
+      "text": "Andrew is using keyboard shortcuts and mouse clicks to interact with his code and browser.",
+      "reasoning": "Andrew is using keyboard shortcuts and mouse clicks to interact with his code and browser, as indicated by the presence of a video call window in the background.",
+      "confidence": 10,
+      "decay": 10,
+      "version": 1,
+      "updated_at": "2025-11-05 06:11:36"
+    }
+  ],
+  "observations": [
+    {
+      "id": 1,
+      "observer_name": "Manual",
+      "content": "Building the website for my course (coding timelapse)\n\nAdding the HTML markupThe image shows a YouTube video paused at 0:00/1:34, with the title \"Building the website for my course (coding timelapse)\" displayed at the top left corner. The video appears to be a coding tutorial, specifically focusing on adding HTML markup to a website. The timeline bar at the bottom indicates that the video has not started playing yet. The interface includes typical YouTube controls such as play/pause, volume, and progress bar. There are also options for subtitles, settings, and sharing the video.",
+      "created_at": "2025-11-05 06:11:22"
+    },
+    {
+      "id": 2,
+      "observer_name": "Manual",
+      "content": "```markdown\n# Screenshot Transcription\n\n## Left Side: Visual Studio Code Interface\n- **File**: `index.html`\n- **Group 1**\n  - **GROUP 1**\n    - **index.html**\n    - **styles.css**\n    - **scripts.js**\n    - **colors.css**\n    - **responsive.css**\n    - **hero.scss**\n    - **header.scss**\n    - **plugins**\n- **Responsive Web Design**\n  - **script.js**\n  - **variables.css**\n  - **variables.scss**\n  - **responsive.css**\n  - **header.scss**\n  - **hero.scss**\n  - **plugins**\n\n## Right Side: Website Preview\n- **Website URL**: `https://quotes.scss.responsive-website-beginner.com/`\n- **Header Section**\n  - **Hero Section**\n    - **Quote**: \"Donec ornare consectetur libero, et porta nibh blandit at. Quisque in dapibus lao, vitae fringilla ipsum. Morbi eget lorem malesuada, viverra neque in, rhoncus felis. Etiam faucibus mauris id pharetra facilisis.\"\n    - **Author**: \"Jamie Hoop\"\n    - **Source**: \"Feminine and Fierce, Community\"\n- **Main Content Area**\n  - **Images**\n    - **Image 1**: A person playing a keyboard.\n    - **Image 2**: A person playing a guitar.\n    - **Image 3**: A person playing a drum set.\n- **Footer Section**\n  - **Social Media Links**\n    - **Facebook**: `facebook.com`\n    - **Twitter**: `twitter.com`\n    - **Instagram**: `instagram.com`\n    - **LinkedIn**: `linkedin.com`\n\n## Bottom Left: Terminal Output\n- **Terminal Output**:\n  - `20:42:18] Finished \"jitesite\" after 0s`\n  - `20:42:26] Starting \"browserSyncReload\"...`\n  - `20:42:26] Finished \"browserSyncReload\" after 631 \u00b5s`\n  - `BrowserSync] Reloading Browsers...`\n```\u2022 The user is building a website for their course using coding tools.\n\u2022 They are working on adding HTML markup to the website.\n\u2022 The video shows a coding tutorial with a timeline indicating 1:34 remaining.\n\u2022 The user is using a code editor with multiple files open, including index.html, styles.css, and scripts.js.\n\u2022 The code editor displays CSS properties like font-size and spacing.\n\u2022 The user is also shown a live view of the website being built in a browser window.\n\u2022 The website features a responsive design with a blue background and a quote displayed prominently.\n\u2022 The user appears to be focused on the coding process, occasionally looking at the screen and typing code.",
+      "created_at": "2025-11-05 06:11:22"
+    },
+    {
+      "id": 3,
+      "observer_name": "Manual",
+      "content": "```markdown\n# Transcription\n\n## Code Editor Screenshot\n\n- **File**: decorations.scss\n- **Editor**: Visual Studio Code (VSCode)\n- **Editor Window**: Opened with multiple tabs:\n  - `index.html`\n  - `quote.scss`\n  - `decorations.scss`\n  - `hero.scss`\n- **Code Snippet**:\n  ```scss\n  @use '../../util' as *;\n\n  .angled-top,\n  .angled-bottom (\n    position: relative,\n  )\n\n  .angled-top (\n    margin-top: calc(1rem + 5px);\n  )\n\n  .angled-bottom (\n    margin-bottom: calc(1rem + 5px);\n  )\n\n  .angled-top > *, .angled-bottom > * {\n    position: relative;\n  }\n\n  .angled-top:before,\n  .angled-bottom:after (\n    use 'functions' as *,\n  )\n  ```\n\n## Browser Screenshot\n\n- **Website URL**: www.example.com\n- **Page Title**: Protected Payments\n- **Main Content**:\n  - **Header**: \"Praesent a justo efficitur, tincidunt purus quis\"\n  - **Body Text**: \n    ```\n    Ut sapien lectus, vulputate vitae lacus vel, tincidunt sodales ipsum. Proin a sem molestie, pulvinar ante non, laoreet ipsum. Sed nec pretium est. Nunc lectus sem.\n    ```\n- **Image**: Placeholder image of a person\n\n## Terminal Screenshot\n\n- **Terminal Command**: `push reload`\n- **Output**:\n  ```\n  routerSyncReload...\n  wwwSyncReload... after 1.36 ms\n  g.Browsers.....\n  ```\n```\u2022 The user is working on a coding project for a website.\n\u2022 They are using Visual Studio Code to write HTML and CSS code.\n\u2022 The video shows a timeline of the coding process, with the user adding HTML markup.\n\u2022 The user is also using a terminal window to run commands related to their project.\n\u2022 The website being developed has a responsive design, as indicated by the \"Responsive Website\" section in the video title.\n\u2022 The user appears to be focused on ensuring the website looks good on different devices.\n\u2022 There are multiple windows open, including the code editor, terminal, and browser preview.\n\u2022 The user is likely following a tutorial or course to learn web development.",
+      "created_at": "2025-11-05 06:11:22"
+    },
+    {
+      "id": 4,
+      "observer_name": "Manual",
+      "content": "```markdown\n# File\n- Edit\n- Selection\n- View\n- Go\n\n## quote.scss - responsive-website-beginners - Visual Studio Code\n\n```scss\n@use '../util' as $;\n\n.quote {\n  position: relative;\n  background-color: $darkPurple;\n  color: $white;\n\n  ::before, ::after {\n    content: '';\n    position: absolute;\n    background: url('') no-repeat center center/cover;\n  }\n\n  __text {\n    font-size: clamp(rem(24), 4vw, rem(36));\n    line-height: 1.25;\n    font-weight: 700;\n    margin-bottom: $space-xl;\n  }\n}\n\nmargin-right: auto;\nmargin-left: auto;\n\n&-B {\n  @include breakpoint(large) {\n    width: 66.667%;\n  }\n}\n```\n\n## index.html\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Responsive Website</title>\n  <link rel=\"stylesheet\" href=\"styles/quote.scss\">\n</head>\n<body>\n  <div class=\"quote\">\n    Praesent a justo efficitur tincidunt purus quis.\n  </div>\n</body>\n</html>\n```\n\n## Decorations.scss\n\n```scss\n// Decorations styles go here\n```\n\n## Colors.scss\n\n```scss\n// Colors styles go here\n```\n\n## Spacing.scss\n\n```scss\n// Spacing styles go here\n```\n\n## Columns.scss\n\n```scss\n// Columns styles go here\n```\n\n## Font-Size.scss\n\n```scss\n// Font-size styles go here\n```\n\n## Flex.scss\n\n```scss\n// Flexbox styles go here\n```\n\n## Localhost:5000\n\n```plaintext\nPraesent a justo efficitur tincidunt purus quis.\nUt sapien lectus, vulputate vitae lacus vel sodales ipsum. Proin a sem molestie, pulvinar laoreet ipsum. Sed nec pretium est. Nunc ac risus at arcu facilisis, euismod euismod nisl malesuada. Integer id orci et dolor dignissim ultrices. Donec ornare blandit at. Quisque ipsum. Morbi neque in, rhoncus pharetra facilisis.\n```\n```\u2022 The user is working on a coding project for a website.\n\u2022 They are using Visual Studio Code to write CSS code.\n\u2022 The user is focused on styling a quote section with a dark purple background and white text.\n\u2022 They have included a before and after pseudo-element to create an angled border around the quote.\n\u2022 The user is also adjusting margin-bottom values for different breakpoints (xs, sm, md, lg, xl).\n\u2022 They are using the terminal to run commands like `browser-sync reload` to test their changes.\n\u2022 The user is collaborating with others, as indicated by the presence of a video call window in the background.",
+      "created_at": "2025-11-05 06:11:22"
+    },
+    {
+      "id": 5,
+      "observer_name": "Manual",
+      "content": "```markdown\n# Screenshot Transcription\n\n## Visual Studio Code Interface\n\n- **File**: `index.html`\n- **Edit**: `quote.css - responsive website begin`\n- **Selection**: `Go`\n- **View**: `decorations.scss`\n- **Line 10**: `line-height: 1.25;`\n- **Line 11**: `font-weight: 700;`\n- **Line 12**: `margin-bottom: Space-xl;`\n- **Line 13**: `&:before, &:after {`\n- **Line 14**: `content: \" \";`\n- **Line 15**: `position: relative;`\n- **Line 16**: `display: block;`\n- **Line 17**: `background: url('/assets/img/quotations-mark.svg') no-repeat center/cover;`\n- **Line 18**: `width: rem(68);`\n- **Line 19**: `height: rem(151);`\n- **Line 20**: `@include breakpoint(large) {`\n- **Line 21**: `position: absolute;`\n- **Line 22**: `width: rem(90);`\n- **Line 23**: `height: rem(220);`\n- **Line 24**: `}`\n\n## Terminal Window\n\n- **Terminal**: `psh`\n- **Task**: `after 21 ms`\n- **User**: `powerSyncReload...`\n\n## Browser Window\n\n- **Title**: `quote.css - responsive website begin`\n- **Website URL**: `https://www.example.com/quote`\n- **Header**: `PROTECTED PAYMENTS`\n- **Main Content**:\n  - **Title**: `Praesent a justo efficitur, tincidunt purus quis`\n  - **Text**: `Ut sapien luctus, vestibula vitae lacus vel, hendrerit ornare ipsum. Praesent a sem pulvinar ante non, tincidunt ipsum. Sed nec pretium est. Nulla facilisi.`\n\n## Code Editor Window\n\n- **File Path**: `quote.css`\n- **Code Snippet**:\n  ```css\n  .quote {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    height: 100vh;\n    background-color: #f0f0f0;\n  }\n\n  .quote__content {\n    text-align: center;\n    font-size: 2rem;\n    color: #333;\n  }\n  ```\n\n## Chat Window\n\n- **User**: `Jenice Hsu`\n- **Role**: `Founder and CEO, Evernote`\n- **Message**: `Hello! How can I assist you today?`\n```\u2022 The user is working on a website project using Visual Studio Code.\n\u2022 They are focusing on adding HTML markup to their project.\n\u2022 The user is navigating through different files in the code editor, specifically working with CSS files like `quote.scss` and `decorations.scss`.\n\u2022 They are adjusting styles for a quote section, including background colors and text positioning.\n\u2022 The user is also checking the live preview of the website in a browser tab.\n\u2022 They are using keyboard shortcuts and mouse clicks to interact with the code and the browser window.\n\u2022 The user appears to be explaining or demonstrating something related to the coding process, possibly for an online course or tutorial.",
+      "created_at": "2025-11-05 06:11:22"
+    }
+  ]
+}

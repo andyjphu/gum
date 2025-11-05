@@ -11,7 +11,9 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Callable, List
 from .models import observation_proposition
+from invoke import invoke
 import traceback
+
 
 from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -301,11 +303,17 @@ class gum:
        # print("!DEBUG", prompt) TODO: modify
 
         schema = PropositionSchema.model_json_schema()
-        rsp = await self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            response_format=get_schema(schema),
+        # rsp = await self.client.chat.completions.create(
+        #     model=self.model,
+        #     messages=[{"role": "user", "content": prompt}],
+        #     response_format=get_schema(schema),
+        # )
+        rsp = await invoke(
+            model = self.model, 
+            messages= [{"role": "user", "content": prompt}], 
+            response_format=get_schema, 
         )
+
 
         return json.loads(rsp.choices[0].message.content)["propositions"]
 
@@ -346,11 +354,17 @@ class gum:
         ]
         prompt_text = await self._build_relation_prompt(payload)
       #  print("!DEBUG2",prompt_text)
-        rsp = await self.client.chat.completions.create(
+        # rsp = await self.client.chat.completions.create(
+        #     model=self.model,
+        #     messages=[{"role": "user", "content": prompt_text}],
+        #     response_format=get_schema(RelationSchema.model_json_schema()),
+        # )
+        rsp = await invoke(
             model=self.model,
             messages=[{"role": "user", "content": prompt_text}],
             response_format=get_schema(RelationSchema.model_json_schema()),
         )
+
 
         data = RelationSchema.model_validate_json(rsp.choices[0].message.content)
 
@@ -416,12 +430,19 @@ class gum:
         """
         body = await self._build_revision_body(similar_cluster, related_obs)
         prompt = self.revise_prompt.replace("{body}", body)
-        #print("!DEBUG3", prompt)
-        rsp = await self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            response_format=get_schema(PropositionSchema.model_json_schema()), 
+
+        # rsp = await self.client.chat.completions.create(
+        #     model=self.model,
+        #     messages=[{"role": "user", "content": prompt}],
+        #     response_format=get_schema(PropositionSchema.model_json_schema()), 
+        # )
+        
+        rsp = await invoke(
+            model = self.model, 
+            messages=[{"role":"user","content":prompt}], 
+            response_format=get_schema(PropositionSchema.model_json_schema())
         )
+        
         return json.loads(rsp.choices[0].message.content)["propositions"] #TODO: return here to log propositions
 
     async def _generate_and_search(
@@ -562,12 +583,20 @@ class gum:
         )
 
        # print("!DEBUG4", prompt)
-        rsp = await self.client.chat.completions.create(
+        # rsp = await self.client.chat.completions.create(
+        #     model=self.model,
+        #     messages=[{"role": "user", "content": prompt}],
+        #     response_format=get_schema(AuditSchema.model_json_schema()),
+        #     temperature=0.0,
+        # )
+        
+        rsp = await invoke(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             response_format=get_schema(AuditSchema.model_json_schema()),
-            temperature=0.0,
+            temperature=0.0,            
         )
+        
         decision = json.loads(rsp.choices[0].message.content)
 
         if not decision["transmit_data"]:

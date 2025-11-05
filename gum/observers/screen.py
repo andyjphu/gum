@@ -259,11 +259,17 @@ class Screen(Observer):
         ]
         content.append({"type": "text", "text": prompt})
 
-        rsp = await self.client.chat.completions.create(
+        # rsp = await self.client.chat.completions.create(
+        #     model=self.model_name,
+        #     messages=[{"role": "user", "content": content}],
+        #     response_format={"type": "text"},
+        # )
+        rsp = invoke(
             model=self.model_name,
             messages=[{"role": "user", "content": content}],
-            response_format={"type": "text"},
+            response_format={"type": "text"}, 
         )
+        
         return rsp.choices[0].message.content
 
     # ─────────────────────────────── I/O helpers
