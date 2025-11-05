@@ -407,7 +407,7 @@ class Manual(Observer):
 
                 # Capture screenshot
                 log.info("Capturing screenshot...")
-                monitor = sct.monitors[1]  # Main monitor
+                monitor = sct.monitors[os.getenv('USER_MONITOR_INDEX')]  # Main monitor TODO: modify which is main monitor for other machines
                 sct_img = sct.grab(monitor)
 
                 # Save and process
