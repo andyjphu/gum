@@ -312,6 +312,7 @@ class gum:
             model = self.model, 
             messages= [{"role": "user", "content": prompt}], 
             response_format=get_schema, 
+            debug_tag="[Proposition Construct]"
         )
 
 
@@ -363,6 +364,7 @@ class gum:
             model=self.model,
             messages=[{"role": "user", "content": prompt_text}],
             response_format=get_schema(RelationSchema.model_json_schema()),
+            debug_tag="[Proposition Filter]"
         )
 
 
@@ -441,6 +443,7 @@ class gum:
             model = self.model, 
             messages=[{"role":"user","content":prompt}], 
             response_format=get_schema(PropositionSchema.model_json_schema())
+            debug_tag="[Proposition Revise]"
         )
         
         return json.loads(rsp.choices[0].message.content)["propositions"] #TODO: return here to log propositions
@@ -594,7 +597,8 @@ class gum:
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             response_format=get_schema(AuditSchema.model_json_schema()),
-            temperature=0.0,            
+            temperature=0.0,           
+            debug_tag="[Audit] <Should Not See>" 
         )
         
         decision = json.loads(rsp.choices[0].message.content)

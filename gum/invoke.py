@@ -19,6 +19,10 @@ async def invoke(
         model=model,
         messages = messages,
         response_format = response_format,   
+        
+        max_tokens = 10000 # TODO: adjust this too? 
+        frequency_penalty = 1, # TODO: adjust this 
+        temperature = 0.01,
         **kwargs, 
     )
     print(now, debug_tag, "response received")

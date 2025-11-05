@@ -247,6 +247,7 @@ class Manual(Observer):
         with open(img_path, "rb") as fh:
             return base64.b64encode(fh.read()).decode()
 
+    #TODO: note this area where we call_gpt_vision is important
     async def _call_gpt_vision(self, prompt: str, img_paths: list[str]) -> str:
         """Call GPT Vision API to analyze images.
         
@@ -257,8 +258,6 @@ class Manual(Observer):
         Returns:
             GPT's analysis of the images.
         """
-        # TODO: Remove this limitation - currently only processes first image
-        # img_paths = img_paths[:1]
         
         # Encode images concurrently
         encoded_images = await asyncio.gather(
@@ -289,6 +288,7 @@ class Manual(Observer):
             model=self.model_name,
             messages=[{"role": "user", "content": content}],
             response_format={"type": "text"}, 
+            debug_tag="[Manual]"
         )
         
         result = rsp.choices[0].message.content

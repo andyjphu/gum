@@ -269,6 +269,7 @@ class Screen(Observer):
             model=self.model_name,
             messages=[{"role": "user", "content": content}],
             response_format={"type": "text"}, 
+            debug_tag="[Screen] <Should not see>"
         )
         
         return rsp.choices[0].message.content
