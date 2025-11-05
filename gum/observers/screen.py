@@ -27,6 +27,7 @@ print("<!2> IMPORTED SCREEN")
 # — Local —
 from .observer import Observer
 from ..schemas import Update
+from invoke import invoke
 
 # — OpenAI async client —
 from openai import AsyncOpenAI
