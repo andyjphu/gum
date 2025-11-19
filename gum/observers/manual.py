@@ -1,11 +1,7 @@
-#!/usr/bin/env python3
-"""Manual video observer - captures and analyzes screen content on-demand.
+# Auth: Andy Phu
+# Used to take screenshots at periodic intervals (default 10 seconds, see CAPTURE_INTERVAL_SEC)
+# Run manually by pressing p
 
-This observer captures screenshots when recording is active and uses GPT-4 Vision
-to analyze the content. It can skip captures when certain applications are visible.
-
-Run manually by pressing p
-"""
 
 from __future__ import annotations
 
@@ -47,7 +43,7 @@ from gum.prompts.screen import TRANSCRIPTION_PROMPT, SUMMARY_PROMPT #TODO: creat
 
 DEFAULT_MODEL = "gpt-4o-mini"
 DEFAULT_SCREENSHOTS_DIR = "../../.cache/gum/screenshots" #TODO Add a flag to CLI for dynamic screenshot basing
-DEFAULT_HISTORY_K = 10
+DEFAULT_HISTORY_K = 8 #TODO: modify this for OOM issues
 CAPTURE_INTERVAL_SEC = 10
 SHORT_SLEEP_SEC = 0.1
 JPEG_QUALITY = 70
@@ -205,7 +201,7 @@ class Manual(Observer):
         # History and state
         self._history: deque[str] = deque(maxlen=max(0, history_k))
         self._is_recording = False
-
+        print("!!!", api_base, api_key, os.getenv("VLLM_ENDPOINT"), os.getenv("OPEN_AI_API_KEY"))
         # OpenAI client
         self.client = AsyncOpenAI(
             base_url=api_base or os.getenv("VLLM_ENDPOINT"),

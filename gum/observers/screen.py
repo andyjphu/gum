@@ -269,7 +269,7 @@ class Screen(Observer):
             model=self.model_name,
             messages=[{"role": "user", "content": content}],
             response_format={"type": "text"}, 
-            debug_tag="[Screen] <Should not see>",
+            debug_tag="[Screen] <Should not see>", # Should not see because Screen should be disabled
             client=self.client
         )
         

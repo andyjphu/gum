@@ -1,3 +1,6 @@
+# Auth: Andy Phu
+# Introduced to centralize communications to VLLM server
+
 from typing import List, Dict, Any, AnyStr
 from openai import AsyncOpenAI
 from datetime import datetime, timezone, timedelta
