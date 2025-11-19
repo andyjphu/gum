@@ -45,7 +45,7 @@ async def invoke(
         messages = messages,
         response_format = response_format,   
         
-        max_tokens = 10000, # TODO: adjust this too? 
+       #max_tokens = 10000, # TODO: adjust this too? 
         frequency_penalty = 0.01, # TODO: adjust this 
         temperature = 0.1,
         **kwargs, 

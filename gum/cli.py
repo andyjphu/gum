@@ -68,8 +68,8 @@ async def main():
     user_name = args.user_name or os.getenv('USER_NAME')
 
     # Batching configuration - follow same pattern as other args #TODO: adjust for available models
-    min_batch_size = args.min_batch_size or int(os.getenv('MIN_BATCH_SIZE', '1')) # 5 -> 1
-    max_batch_size = args.max_batch_size or int(os.getenv('MAX_BATCH_SIZE', '5')) # 15 -> 1
+    min_batch_size = args.min_batch_size or int(os.getenv('MIN_BATCH_SIZE', '1')) # 5 -> 1 , lowered to improve API understanding
+    max_batch_size = args.max_batch_size or int(os.getenv('MAX_BATCH_SIZE', '15')) # 15 -> 1
 
     # you need one of: user_name for listening mode, --query, or --recent
     if user_name is None and args.query is None and not getattr(args, 'recent', False):

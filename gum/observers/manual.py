@@ -45,7 +45,7 @@ from datetime import datetime, timezone, timedelta
 
 DEFAULT_MODEL = "gpt-4o-mini"
 DEFAULT_SCREENSHOTS_DIR = "../../.cache/gum/screenshots" #TODO Add a flag to CLI for dynamic screenshot basing
-DEFAULT_HISTORY_K = 8 #TODO: modify this for OOM issues
+DEFAULT_HISTORY_K = 10 #TODO: modify this for OOM issues
 CAPTURE_INTERVAL_SEC = 10
 SHORT_SLEEP_SEC = 0.1
 JPEG_QUALITY = 70
@@ -286,11 +286,16 @@ class Manual(Observer):
         #     messages=[{"role": "user", "content": content}],
         #     response_format={"type": "text"},
         # )
+        if prompt == self.summary_prompt: 
+            debug_tag = "[Manual Summary]"
+        else:
+            debug_tag = "[Manual Transcription]"
+            
         rsp = await invoke(
             model=self.model_name,
             messages=[{"role": "user", "content": content}],
             response_format={"type": "text"}, 
-            debug_tag="[Manual]",
+            debug_tag=debug_tag,
             debug_img_paths = img_paths, 
             client=self.client,
         )
