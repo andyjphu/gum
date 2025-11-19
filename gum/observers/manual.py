@@ -291,8 +291,8 @@ class Manual(Observer):
         
         result = rsp.choices[0].message.content
         
-        #TODO modify this.. too verbose?
-        self.logger.info(f"\n\n{"▇"*60}\nFor: \n{img_paths} \n\n {"▇ "*30} \n\n Received:\n {result[:100]} \n{"▇"*60}\n")
+        if self.debug:
+            self.logger.info(f"\n\n{"▇"*60}\nFor: \n{img_paths} \n\n {"▇ "*30} \n\n Received:\n {result[:100]} \n{"▇"*60}\n")
             
             
         return result
@@ -403,7 +403,8 @@ class Manual(Observer):
                     continue
 
                 # Capture screenshot
-                logger.info("Capturing screenshot on monitor..." + str(USER_MONITOR_INDEX))
+                if self.debug:
+                    logger.info("Capturing screenshot on monitor..." + str(USER_MONITOR_INDEX))
 
                 monitor = sct.monitors[USER_MONITOR_INDEX]  # Main monitor TODO: modify which is main monitor for other machines
             
@@ -412,8 +413,8 @@ class Manual(Observer):
                 # Save and process
                 path = await self._save_frame(sct_img, "periodic")
                 await self._process_and_emit(path)
-
-                logger.info("Screenshot captured and processed.")
+                if self.debug:
+                    logger.info("Screenshot captured and processed.")
 
                 # Wait before next capture
                 await asyncio.sleep(CAPTURE_INTERVAL_SEC)

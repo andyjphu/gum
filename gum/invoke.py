@@ -5,8 +5,9 @@ from typing import List, Dict, Any, AnyStr
 from openai import AsyncOpenAI
 from datetime import datetime, timezone, timedelta
 import logging
+from .data import save_to_file
 
-UTCm8 = timezone(timedelta(hours=0))
+UTCm0 = timezone(timedelta(hours=0))
 
 async def invoke(
     client: AsyncOpenAI, 
@@ -22,12 +23,14 @@ async def invoke(
     logger.propagate = False
     if not logger.handlers:
         h = logging.StreamHandler()
-        h.setFormatter(logging.Formatter("%(asctime)s - [VIA-INVOKE] - %(message)s"))
+        h.setFormatter(logging.Formatter("%(message)s"))
         logger.addHandler(h)
         
-    now = datetime.now(UTCm8) 
+    now = datetime.now(UTCm0) 
+    ts = now.strftime("%Y-%m-%d %H:%M:%S")
+    
     # timestamp = f"{now.strftime('%H:%M:%S')}"
-    logger.info(f"{debug_tag} request sent")
+    logger.info(f"{ts} [VIA-INVOKE] {debug_tag} request sent")
     response = await client.chat.completions.create(
         model=model,
         messages = messages,
@@ -38,8 +41,14 @@ async def invoke(
         temperature = 0.01,
         **kwargs, 
     )
-    logger.info(f"{debug_tag} response received")
     
+    
+    now = datetime.now(UTCm0) 
+    fts = now.strftime("%Y%m%d_%H%M%S")
+    ts = now.strftime("%Y-%m-%d %H:%M:%S")
+    logger.info(f"{ts} [VIA_INVOKE] {debug_tag} response received")
+    
+    save_to_file(text=str(response.choices[0].message.content), file_name=f"{ts}-{debug_tag}-RCV.md")
     
     
     return response

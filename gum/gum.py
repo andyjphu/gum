@@ -37,6 +37,7 @@ from .schemas import (
 )
 from gum.prompts.gum import AUDIT_PROMPT, PROPOSE_PROMPT, REVISE_PROMPT, SIMILAR_PROMPT
 from .batcher import ObservationBatcher
+import time
 
 class gum:
     """A class for managing general user models.
@@ -97,6 +98,7 @@ class gum:
         if not self.logger.handlers:
             h = logging.StreamHandler()
             h.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+            logging.Formatter.converter = time.gmtime
             self.logger.addHandler(h)
 
         # prompts

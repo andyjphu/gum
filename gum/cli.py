@@ -107,7 +107,7 @@ async def main():
     else:
         print(f"Listening to {user_name} with model {model}")
 
-        manual_observer = Manual(model_name=model, debug=True) #TODO: modfy debug
+        manual_observer = Manual(model_name=model, debug=False) #TODO: modfy debug
         key_listener = get_key_listener(manual_observer)
         key_listener.start()
 
