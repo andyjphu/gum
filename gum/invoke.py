@@ -32,11 +32,11 @@ async def invoke(
     request_fts = now.strftime("%Y%m%d_%H%M%S")
     
     if(debug_img_paths): 
-        fp = save_to_file(text=f"{messages}", subfolder=f"{request_fts}", filename=f"{request_fts}-{debug_tag}-SND.txt")
+        fp = save_to_file(text=f"{messages}", subfolder=f"{request_fts}-{debug_tag}", filename=f"{request_fts}-{debug_tag}-SND.txt")
         logger.info(f"{ts} [VIA-INVOKE] {debug_tag} request sent, img_paths: {debug_img_paths}")
-        copy_imgs(img_paths = debug_img_paths, subfolder=f"{request_fts}" )
+        copy_imgs(img_paths = debug_img_paths, subfolder=f"{request_fts}-{debug_tag}" )
     else:
-        fp = save_to_file(text=f"{messages}", subfolder=f"{request_fts}", filename=f"{request_fts}-{debug_tag}-SND.txt")
+        fp = save_to_file(text=f"{messages}", subfolder=f"{request_fts}-{debug_tag}", filename=f"{request_fts}-{debug_tag}-SND.txt")
         logger.info(f"{ts} [VIA-INVOKE] {debug_tag} request sent")
       
     
@@ -56,7 +56,7 @@ async def invoke(
     response_fts = now.strftime("%Y%m%d_%H%M%S")
     ts = now.strftime("%Y-%m-%d %H:%M:%S")
     
-    fp = save_to_file(text=str(response.choices[0].message.content), subfolder=f"{request_fts}", filename=f"{response_fts}-{debug_tag}-RCV.txt")
+    fp = save_to_file(text=str(response.choices[0].message.content), subfolder=f"{request_fts}-{debug_tag}", filename=f"{response_fts}-{debug_tag}-RCV.txt")
     
     logger.info(f"{ts} [VIA_INVOKE] {debug_tag} response received, stored at {fp}")
     

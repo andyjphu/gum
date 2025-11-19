@@ -51,7 +51,7 @@ SHORT_SLEEP_SEC = 0.1
 JPEG_QUALITY = 70
 USER_MONITOR_INDEX = int(os.getenv("USER_MONITOR_INDEX", 1))
 
-UTCm8 = timezone(timedelta(hours=0))
+UTCm0 = timezone(timedelta(hours=0))
 
 ###############################################################################
 # Window geometry helpers                                                     #
@@ -205,7 +205,8 @@ class Manual(Observer):
         # History and state
         self._history: deque[str] = deque(maxlen=max(0, history_k))
         self._is_recording = False
-        print("!!!", api_base, api_key, os.getenv("VLLM_ENDPOINT"), os.getenv("OPEN_AI_API_KEY"))
+        if (self.debug):
+            print("!!!ENV", api_base, api_key, os.getenv("VLLM_ENDPOINT"), os.getenv("OPEN_AI_API_KEY"))
         # OpenAI client
         self.client = AsyncOpenAI(
             base_url=api_base or os.getenv("VLLM_ENDPOINT"),
@@ -312,9 +313,10 @@ class Manual(Observer):
         Returns:
             Path to the saved image.
         """
-        #ts = f"{time.time():.5f}" #TODO: timestamp in near human readable
+        #ts = f"{time.time():.5f}"  old timestamp, was changed to be near human readable
         ts = datetime.now(UTCm0).strftime("%Y%m%d_%H%M%S")
         path = os.path.join(self.screens_dir, f"{ts}_{tag}.jpg")
+        
         
         await asyncio.to_thread(
             Image.frombytes("RGB", (frame.width, frame.height), frame.rgb).save,

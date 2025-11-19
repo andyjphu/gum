@@ -11,6 +11,8 @@ def save_to_file(
     text: str,
     filename: str, 
     subfolder: str):
+
+    subfolder = subfolder.replace(" ", "").replace("[", "").replace("]", "")
     
     filename = filename.replace(" ", "").replace("[", "").replace("]", "")
     
@@ -26,6 +28,9 @@ def save_to_file(
     return filepath
 
 def copy_imgs(img_paths: List[str], subfolder: str):
+    
+    subfolder = subfolder.replace(" ", "").replace("[", "").replace("]", "")
+    
     dest = BASE / subfolder
     dest.mkdir(parents=True, exist_ok=True)
 
