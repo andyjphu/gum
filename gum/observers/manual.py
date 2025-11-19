@@ -37,6 +37,8 @@ from ..schemas import Update
 from ..invoke import invoke
 from gum.prompts.screen import TRANSCRIPTION_PROMPT, SUMMARY_PROMPT #TODO: create new prompt file for manual capture observer
 
+from datetime import datetime, timezone, timedelta
+
 ###############################################################################
 # Constants                                                                   #
 ###############################################################################
@@ -48,6 +50,8 @@ CAPTURE_INTERVAL_SEC = 10
 SHORT_SLEEP_SEC = 0.1
 JPEG_QUALITY = 70
 USER_MONITOR_INDEX = int(os.getenv("USER_MONITOR_INDEX", 1))
+
+UTCm8 = timezone(timedelta(hours=0))
 
 ###############################################################################
 # Window geometry helpers                                                     #
@@ -286,6 +290,7 @@ class Manual(Observer):
             messages=[{"role": "user", "content": content}],
             response_format={"type": "text"}, 
             debug_tag="[Manual]",
+            debug_img_paths = img_paths, 
             client=self.client,
         )
         
@@ -307,7 +312,8 @@ class Manual(Observer):
         Returns:
             Path to the saved image.
         """
-        ts = f"{time.time():.5f}"
+        #ts = f"{time.time():.5f}" #TODO: timestamp in near human readable
+        ts = datetime.now(UTCm0).strftime("%Y%m%d_%H%M%S")
         path = os.path.join(self.screens_dir, f"{ts}_{tag}.jpg")
         
         await asyncio.to_thread(

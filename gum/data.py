@@ -2,12 +2,38 @@
 # Introduced for client-side logging, central file handler
 import os
 from pathlib import Path
+from typing import List
+import shutil
 
-BASE = Path(__file__).parent 
+BASE = Path(__file__).parent / "data"
 
 def save_to_file(
     text: str,
-    file_name: str, 
-    file_path: str = "./data"):
-    with open(os.path.join(BASE, file_path, file_name), "w") as f:
+    filename: str, 
+    subfolder: str):
+    
+    filename = filename.replace(" ", "").replace("[", "").replace("]", "")
+    
+    folder = BASE / subfolder
+    folder.mkdir(parents=True, exist_ok=True)  # create if not exists
+
+    filepath = folder / filename
+
+    
+    with open(filepath, "w") as f:
         f.write(text)
+        
+    return filepath
+
+def copy_imgs(img_paths: List[str], subfolder: str):
+    dest = BASE / subfolder
+    dest.mkdir(parents=True, exist_ok=True)
+
+    out_paths = []
+    for p in img_paths:
+        p = Path(p)
+        target = dest / p.name
+        shutil.copy(p, target)
+        out_paths.append(target)
+
+    return out_paths
