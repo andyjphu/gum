@@ -1,0 +1,279 @@
+{
+  "relations": [
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [22]
+    },
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [21]
+    },
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [18]
+    },
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [19]
+    },
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [20]
+    },
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [23]
+    },
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [24]
+    },
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [25]
+    },
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [26]
+    },
+    {
+      "source": 17,
+      "label": "SIMILAR",
+      "target": [27]
+    },
+    {
+      "source": 22,
+      "label": "SIMILAR",
+      "target": [21]
+    },
+    {
+      "source": 22,
+      "label": "SIMILAR",
+      "target": [18]
+    },
+    {
+      "source": 22,
+      "label": "SIMILAR",
+      "target": [19]
+    },
+    {
+      "source": 22,
+      "label": "SIMILAR",
+      "target": [20]
+    },
+    {
+      "source": 22,
+      "label": "SIMILAR",
+      "target": [23]
+    },
+    {
+      "source": 22,
+      "label": "SIMILAR",
+      "target": [24]
+    },
+    {
+      "source": 22,
+      "label": "SIMILAR",
+      "target": [25]
+    },
+    {
+      "source": 22,
+      "label": "SIMILAR",
+      "target": [26]
+    },
+    {
+      "source": 22,
+      "label": "SIMILAR",
+      "target": [27]
+    },
+    {
+      "source": 21,
+      "label": "SIMILAR",
+      "target": [18]
+    },
+    {
+      "source": 21,
+      "label": "SIMILAR",
+      "target": [19]
+    },
+    {
+      "source": 21,
+      "label": "SIMILAR",
+      "target": [20]
+    },
+    {
+      "source": 21,
+      "label": "SIMILAR",
+      "target": [23]
+    },
+    {
+      "source": 21,
+      "label": "SIMILAR",
+      "target": [24]
+    },
+    {
+      "source": 21,
+      "label": "SIMILAR",
+      "target": [25]
+    },
+    {
+      "source": 21,
+      "label": "SIMILAR",
+      "target": [26]
+    },
+    {
+      "source": 21,
+      "label": "SIMILAR",
+      "target": [27]
+    },
+    {
+      "source": 18,
+      "label": "SIMILAR",
+      "target": [19]
+    },
+    {
+      "source": 18,
+      "label": "SIMILAR",
+      "target": [20]
+    },
+    {
+      "source": 18,
+      "label": "SIMILAR",
+      "target": [23]
+    },
+    {
+      "source": 18,
+      "label": "SIMILAR",
+      "target": [24]
+    },
+    {
+      "source": 18,
+      "label": "SIMILAR",
+      "target": [25]
+    },
+    {
+      "source": 18,
+      "label": "SIMILAR",
+      "target": [26]
+    },
+    {
+      "source": 18,
+      "label": "SIMILAR",
+      "target": [27]
+    },
+    {
+      "source": 19,
+      "label": "SIMILAR",
+      "target": [20]
+    },
+    {
+      "source": 19,
+      "label": "SIMILAR",
+      "target": [23]
+    },
+    {
+      "source": 19,
+      "label": "SIMILAR",
+      "target": [24]
+    },
+    {
+      "source": 19,
+      "label": "SIMILAR",
+      "target": [25]
+    },
+    {
+      "source": 19,
+      "label": "SIMILAR",
+      "target": [26]
+    },
+    {
+      "source": 19,
+      "label": "SIMILAR",
+      "target": [27]
+    },
+    {
+      "source": 20,
+      "label": "SIMILAR",
+      "target": [23]
+    },
+    {
+      "source": 20,
+      "label": "SIMILAR",
+      "target": [24]
+    },
+    {
+      "source": 20,
+      "label": "SIMILAR",
+      "target": [25]
+    },
+    {
+      "source": 20,
+      "label": "SIMILAR",
+      "target": [26]
+    },
+    {
+      "source": 20,
+      "label": "SIMILAR",
+      "target": [27]
+    },
+    {
+      "source": 23,
+      "label": "SIMILAR",
+      "target": [24]
+    },
+    {
+      "source": 23,
+      "label": "SIMILAR",
+      "target": [25]
+    },
+    {
+      "source": 23,
+      "label": "SIMILAR",
+      "target": [26]
+    },
+    {
+      "source": 23,
+      "label": "SIMILAR",
+      "target": [27]
+    },
+    {
+      "source": 24,
+      "label": "SIMILAR",
+      "target": [25]
+    },
+    {
+      "source": 24,
+      "label": "SIMILAR",
+      "target": [26]
+    },
+    {
+      "source": 24,
+      "label": "SIMILAR",
+      "target": [27]
+    },
+    {
+      "source": 25,
+      "label": "SIMILAR",
+      "target": [26]
+    },
+    {
+      "source": 25,
+      "label": "SIMILAR",
+      "target": [27]
+    },
+    {
+      "source": 26,
+      "label": "SIMILAR",
+      "target": [27]
+    }
+  ]
+}

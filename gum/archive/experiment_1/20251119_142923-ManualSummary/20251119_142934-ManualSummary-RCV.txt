@@ -1,0 +1,47 @@
+### Detailed Description of Actions Across the Provided Images
+
+#### Image 1:
+- **Action**: The user is working on an HTML file (`index.html`) and a SCSS file (`quote.scss`).
+- **Code Focus**: The user is adding HTML markup for a section with classes like `fullwidthFeature`, `alternatingBlocks`, and `quote`.
+- **Screen Elements**:
+  - The left side shows the code editor with multiple files open.
+  - The right side displays a preview of the website design in a browser.
+  - The bottom left corner shows a video player indicating the user is watching a tutorial or recording.
+
+#### Image 2:
+- **Action**: The user continues to work on the SCSS file (`quote.scss`), specifically focusing on the `.angled-top` and `.angled-bottom` classes.
+- **Code Focus**: The user adds styles for positioning and background properties.
+- **Screen Elements**:
+  - The left side shows the code editor with the SCSS file open.
+  - The right side displays the website design in a browser.
+  - The bottom left corner shows the video player.
+
+#### Image 3:
+- **Action**: The user is working on the SCSS file (`quote.scss`), adding styles for the `.quote` class.
+- **Code Focus**: The user sets the background color, text color, font size, line height, and margin-bottom properties.
+- **Screen Elements**:
+  - The left side shows the code editor with the SCSS file open.
+  - The right side displays the website design in a browser.
+  - The bottom left corner shows the video player.
+
+#### Image 4:
+- **Action**: The user is working on the SCSS file (`decoration.scss`), adding transformations and border-bottom styles for the `.angled-bottom` class.
+- **Code Focus**: The user applies skewY and translateY transformations along with a border-bottom property.
+- **Screen Elements**:
+  - The left side shows the code editor with the SCSS file open.
+  - The right side displays the website design in a browser.
+  - The bottom left corner shows the video player.
+
+#### Image 5:
+- **Action**: The user is working on the SCSS file (`decoration.scss`), continuing to add transformations and styles for the `.angled-bottom` class.
+- **Code Focus**: The user refines the transformations and border-bottom properties.
+- **Screen Elements**:
+  - The left side shows the code editor with the SCSS file open.
+  - The right side displays the website design in a browser.
+  - The bottom left corner shows the video player.
+
+### Summary of Actions:
+- The user is building a responsive website using HTML and SCSS.
+- They are focusing on styling specific sections, particularly the quote section, by adding various CSS properties such as positioning, transformations, and borders.
+- The user is referencing a tutorial or recording, as indicated by the video player at the bottom left corner.
+- The design preview on the right side helps them visualize how their changes affect the layout and appearance of the website.

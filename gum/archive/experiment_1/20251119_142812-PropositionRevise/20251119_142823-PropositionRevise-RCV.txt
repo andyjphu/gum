@@ -1,0 +1,52 @@
+{
+  "propositions": [
+    {
+      "reasoning": "The user is actively working on the `index.html` file, adding and editing HTML markup, and the terminal shows a command being executed in PowerShell, suggesting testing or running development-related commands.",
+      "proposition": "Andrew is testing or running commands related to the development process, possibly involving browser synchronization.",
+      "confidence": 8,
+      "decay": 8
+    },
+    {
+      "reasoning": "The user is actively working on the `index.html` file, adding and editing HTML markup, and the terminal shows a command being executed in PowerShell, suggesting testing or running development-related commands.",
+      "proposition": "Andrew is currently focused on building the HTML structure of his website.",
+      "confidence": 8,
+      "decay": 8
+    },
+    {
+      "reasoning": "The user is actively working on SCSS files such as `colors.scss`, `spacing.scss`, and `font-size.scss`, which contain CSS variables and styles.",
+      "proposition": "Andrew is actively working on styling the website using SCSS files.",
+      "confidence": 8,
+      "decay": 8
+    },
+    {
+      "reasoning": "The user is working on a project involving responsive design, as indicated by the use of `rem()` functions in the SCSS files.",
+      "proposition": "Andrew prefers to develop projects with responsive design principles.",
+      "confidence": 8,
+      "decay": 8
+    },
+    {
+      "reasoning": "The user is using a browser to view the live preview of the website, indicating a preference for real-time feedback on their work.",
+      "proposition": "Andrew prefers to see the real-time preview of his website while developing.",
+      "confidence": 8,
+      "decay": 8
+    },
+    {
+      "reasoning": "The user is executing commands in the terminal, which implies they are managing tasks such as reloading the browser or running other development-related commands.",
+      "proposition": "Andrew uses the terminal to manage tasks and automate processes during development.",
+      "confidence": 8,
+      "decay": 8
+    },
+    {
+      "reasoning": "The user is working within Visual Studio Code, specifically editing SCSS files, which indicates a focus on front-end development.",
+      "proposition": "Andrew is currently engaged in front-end web development using Visual Studio Code.",
+      "confidence": 8,
+      "decay": 8
+    },
+    {
+      "reasoning": "The user is frequently interacting with the `decoration.scss` file, modifying SCSS styles for angled top and bottom elements, indicating a deep engagement with the project's design aspects.",
+      "proposition": "Andrew is focused on refining the design of angled top and bottom elements in his project.",
+      "confidence": 8,
+      "decay": 8
+    }
+  ]
+}

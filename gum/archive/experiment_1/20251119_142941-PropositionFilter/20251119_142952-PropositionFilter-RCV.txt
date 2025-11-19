@@ -1,0 +1,154 @@
+{
+  "relations": [
+    {
+      "source": 32,
+      "label": "SIMILAR",
+      "target": [36]
+    },
+    {
+      "source": 16,
+      "label": "SIMILAR",
+      "target": [15]
+    },
+    {
+      "source": 29,
+      "label": "SIMILAR",
+      "target": [38]
+    },
+    {
+      "source": 9,
+      "label": "SIMILAR",
+      "target": [37]
+    },
+    {
+      "source": 15,
+      "label": "SIMILAR",
+      "target": [16]
+    },
+    {
+      "source": 34,
+      "label": "SIMILAR",
+      "target": [30]
+    },
+    {
+      "source": 31,
+      "label": "SIMILAR",
+      "target": []
+    },
+    {
+      "source": 33,
+      "label": "SIMILAR",
+      "target": []
+    },
+    {
+      "source": 35,
+      "label": "SIMILAR",
+      "target": []
+    },
+    {
+      "source": 30,
+      "label": "SIMILAR",
+      "target": []
+    },
+    {
+      "source": 36,
+      "label": "SIMILAR",
+      "target": [32]
+    },
+    {
+      "source": 37,
+      "label": "SIMILAR",
+      "target": [9]
+    },
+    {
+      "source": 38,
+      "label": "SIMILAR",
+      "target": [29]
+    },
+    {
+      "source": 39,
+      "label": "SIMILAR",
+      "target": []
+    },
+    {
+      "source": 40,
+      "label": "SIMILAR",
+      "target": []
+    },
+    {
+      "source": 32,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 16,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 29,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 9,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 15,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 34,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 31,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 33,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 35,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 30,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 36,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 37,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 38,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 39,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 40,
+      "label": "UNRELATED",
+      "target": []
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+```markdown
+# Visual Studio Code Screenshot Transcription
+
+## File Explorer
+- `index.html`
+- `quote.scss`
+- `decorations.scss`
+- `hero.scss`
+
+## Decorations.scss File Content
+```scss
+@use '../util' as *;
+
+* > .angled-top, * > .angled-bottom {
+    position: relative;
+}
+
+* > .angled-top, * > .angled-bottom {
+    position: relative;
+}
+
+.angled-top::before, .angled-bottom::after {
+    content: '';
+    position: absolute;
+    background: $darkPurple;
+    width: 100%;
+}
+
+.angled-top {
+    &::before {
+        top: 0;
+    }
+}
+```
+
+## Colors.scss File Content
+```scss
+@use 'functions' as *;
+
+$space-xsm: rem(10);
+$space-sm: rem(16);
+$space-md: rem(20);
+$space-lg: rem(30);
+$space-xl: rem(40);
+```
+
+## Terminal Output
+```
+Task 'after 22 ms
+browserSyncReload'...
+browserSyncReload' after 492 µs
+Browsers...
+```
+
+## Web Browser
+- `localhost:3000`
+- `Mythos`
+
+## Website Content
+- **PROTECTED PAYMENTS**
+  - **Praesent a justo efficitur, tincidunt purus quis**
+  - Ut sapien lectus, vulputate vitae lacus vel, tincidunt sodales ipsum. Proin a sem molestie, pulvinar ante non, laoreet ipsum. Sed nec pretium est. Nunc lectus sem.
+  - ![Image of a tablet](tablet.png)
+
+## Profile Section
+- **Janice Hsu**
+  - Founder and CEO, Evermindly
+```

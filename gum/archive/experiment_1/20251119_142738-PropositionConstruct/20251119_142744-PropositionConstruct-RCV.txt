@@ -1,0 +1,34 @@
+{
+  "propositions": [
+    {
+      "reasoning": "The user is actively working on the `index.html` file, adding and editing HTML markup. The presence of the `index.html` file in the file explorer and the code editor indicates that this is a primary focus.",
+      "proposition": "Andrew is currently focused on building the HTML structure of his website.",
+      "confidence": 7,
+      "decay": 9
+    },
+    {
+      "reasoning": "The user is working on SCSS files such as `colors.scss`, `spacing.scss`, and `font-size.scss`. These files contain CSS variables and styles, indicating that Andrew is actively styling the website.",
+      "proposition": "Andrew is actively working on styling the website using SCSS files.",
+      "confidence": 8,
+      "decay": 9
+    },
+    {
+      "reasoning": "The terminal output shows a command being executed in PowerShell (`pwsh`) and mentions a task scheduled to run after 30 ms, followed by a browser sync reload. This suggests that Andrew is testing or running commands related to the development process.",
+      "proposition": "Andrew is testing or running commands related to the development process, possibly involving browser synchronization.",
+      "confidence": 6,
+      "decay": 8
+    },
+    {
+      "reasoning": "The design preview shows a section with a quote from Janice Hsu, indicating that Andrew is working on a section of the website that includes content and design elements.",
+      "proposition": "Andrew is working on a section of the website that includes a quote from Janice Hsu.",
+      "confidence": 7,
+      "decay": 8
+    },
+    {
+      "reasoning": "The video player shows a title 'Adding the HTML markup,' suggesting that Andrew is following a tutorial or guide to add HTML markup to the website.",
+      "proposition": "Andrew is following a tutorial or guide to add HTML markup to the website.",
+      "confidence": 5,
+      "decay": 7
+    }
+  ]
+}

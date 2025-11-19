@@ -1,0 +1,29 @@
+{
+  "relations": [
+    {
+      "source": 1,
+      "label": "SIMILAR",
+      "target": [4]
+    },
+    {
+      "source": 2,
+      "label": "SIMILAR",
+      "target": [4]
+    },
+    {
+      "source": 3,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 4,
+      "label": "SIMILAR",
+      "target": [1, 2]
+    },
+    {
+      "source": 5,
+      "label": "SIMILAR",
+      "target": [1]
+    }
+  ]
+}

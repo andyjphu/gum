@@ -1,0 +1,54 @@
+{
+  "relations": [
+    {
+      "source": 7,
+      "label": "SIMILAR",
+      "target": [10]
+    },
+    {
+      "source": 6,
+      "label": "SIMILAR",
+      "target": [12]
+    },
+    {
+      "source": 3,
+      "label": "SIMILAR",
+      "target": [13]
+    },
+    {
+      "source": 8,
+      "label": "SIMILAR",
+      "target": []
+    },
+    {
+      "source": 11,
+      "label": "SIMILAR",
+      "target": []
+    },
+    {
+      "source": 14,
+      "label": "SIMILAR",
+      "target": []
+    },
+    {
+      "source": 1,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 2,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 5,
+      "label": "UNRELATED",
+      "target": []
+    },
+    {
+      "source": 9,
+      "label": "UNRELATED",
+      "target": []
+    }
+  ]
+}

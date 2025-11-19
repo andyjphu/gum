@@ -1,0 +1,28 @@
+{
+  "propositions": [
+    {
+      "reasoning": "The user is actively working on the `index.html` file, adding and editing HTML markup.",
+      "proposition": "Andrew is currently focused on building the HTML structure of his website.",
+      "confidence": 9,
+      "decay": 7
+    },
+    {
+      "reasoning": "The user is working on SCSS files such as `colors.scss`, `spacing.scss`, and `font-size.scss`, which contain CSS variables and styles.",
+      "proposition": "Andrew is actively working on styling the website using SCSS files.",
+      "confidence": 9,
+      "decay": 7
+    },
+    {
+      "reasoning": "The design preview shows a section with a quote from Janice Hsu, indicating that Andrew is working on a section of the website that includes content and design elements.",
+      "proposition": "Andrew is working on a section of the website that includes a quote from Janice Hsu.",
+      "confidence": 9,
+      "decay": 7
+    },
+    {
+      "reasoning": "The video player shows a title 'Adding the HTML markup,' suggesting that Andrew is following a tutorial or guide to add HTML markup to the website.",
+      "proposition": "Andrew is following a tutorial or guide to add HTML markup to the website.",
+      "confidence": 9,
+      "decay": 7
+    }
+  ]
+}

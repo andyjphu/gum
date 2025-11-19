@@ -1,0 +1,35 @@
+### Detailed Description of Actions Across the Provided Images
+
+#### Image 1:
+- **Action**: The user is working on an HTML file (`index.html`) and a SCSS file (`quote.scss`).
+- **Specific Action**: The user is adding HTML markup for a section with a class `quote`. The code snippet shows the structure of a container with a class `container`.
+- **Context**: The user is likely building a responsive website, as indicated by the title "Building the website for my course (coding timelapse)".
+- **Note**: The terminal at the bottom indicates that tasks like `browserSyncReload` have been executed, suggesting that the user is testing the changes in real-time.
+
+#### Image 2:
+- **Action**: The user continues to work on the SCSS file (`quote.scss`), specifically focusing on the `.angled-top` and `.angled-bottom` classes.
+- **Specific Action**: The user adds styles for positioning these elements relative and setting their background color to `$darkPurple`.
+- **Context**: The user is enhancing the design of the quote section, possibly adding decorative elements to improve visual appeal.
+- **Note**: The browser preview on the right side shows the current state of the website, which includes a blue background and a section with text and an image of a person.
+
+#### Image 3:
+- **Action**: The user is working on the SCSS file (`quote.scss`) and adding styles for the `.quote` class.
+- **Specific Action**: The user sets the background color to `$darkPurple`, the text color to white, and applies a font size using `clamp()` for better responsiveness.
+- **Context**: The user is ensuring that the text within the quote section looks good across different screen sizes.
+- **Note**: The terminal output confirms that tasks like `jsTask` and `browserSyncReload` have been completed successfully, indicating that the user is testing the changes in real-time.
+
+### Summary of Actions:
+1. **HTML Markup Addition**:
+   - Added HTML structure for a quote section in `index.html`.
+
+2. **SCSS Styling**:
+   - Added styles for `.angled-top` and `.angled-bottom` in `quote.scss`.
+   - Set background color and position for `.angled-top` and `.angled-bottom`.
+   - Applied styles for the `.quote` class in `quote.scss`, including background color, text color, and font size.
+
+3. **Responsive Design**:
+   - Ensured that the text within the quote section is responsive using `clamp()`.
+   - Tested the changes in real-time using `browserSyncReload`.
+
+4. **Real-Time Testing**:
+   - Used the terminal to execute tasks like `browserSyncReload` to see immediate changes in the browser preview.

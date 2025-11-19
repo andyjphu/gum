@@ -1,0 +1,92 @@
+```markdown
+# Visual Studio Code Screenshot Transcription
+
+## File Explorer
+- **OPEN EDITORS**
+  - GROUP 1
+    - index.html
+    - quote.scss
+    - decorations.scss
+  - GROUP 2
+    - colors.scss
+    - spacing.scss
+    - columns.scss
+    - font-size.scss
+- **RESPONSIVE-WEB-BEGINNERS**
+  - assets
+    - img
+      - asterisk-solid.svg
+      - bell-solid.svg
+      - comments-dollar-solid.svg
+      - janice-hsu.jpg
+      - laptop-check.svg
+      - laptop-dashboard.svg
+      - logo-mythos.svg
+      - quotation-mark.svg
+      - tablet-payments.svg
+      - tablet-phone.svg
+      - unicorn.svg
+
+## Editor Tabs
+- **quote.scss**
+  ```scss
+  @use '../util' as *;
+
+  .quote {
+    background-color: $darkPurple;
+    color: $white;
+
+    &__text {
+      position: relative;
+      font-size: clamp(rem(24), 4vw, rem(36));
+      line-height: 1.25;
+      font-weight: 700;
+      margin-bottom: $space-xlg;
+
+      &::before, &::after {
+        content: '';
+        position: absolute;
+        background: url('/assets/img/quotation-mark.svg');
+      }
+    }
+  }
+  ```
+- **colors.scss**
+  ```scss
+  margin-right: auto;
+  margin-left: auto;
+
+  &-8 {
+    @include breakpoint(large){
+      width: 66.667%;
+    }
+  }
+
+  &-10 {
+    @include breakpoint(large){
+      width: 83.333%;
+    }
+  }
+  ```
+
+## Terminal
+```
+[21:04:41] Finished 'jsTask' after 31 ms
+[21:04:41] Starting 'browserSyncReload'...
+[21:04:41] Finished 'browserSyncReload' after 642 µs
+[Browsersync] Reloading Browsers...
+```
+
+## Web Browser
+```
+localhost:3000
+```
+
+## Website Content
+**PROTECTED PAYMENTS**
+*Praesent a justo efficitur, tincidunt purus quis*
+Ut sapien lectus, vulputate vitae lacus vel, tincidunt sodales ipsum. Proin a sem molestie, pulvinar ante non, laoreet ipsum. Sed nec pretium est. Nunc lectus sem.
+Donec ornare consectetur libero, et porta nibh blandit at. Quisque in dapibus leo, vitae fringilla ipsum. Morbi eget lorem malesuada, viverra neque in, rhoncus felis. Etiam faucibus mauris id pharetra facilisis.
+**Janice Hsu**
+Founder and CEO, Evermindly
+```
