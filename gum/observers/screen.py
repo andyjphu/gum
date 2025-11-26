@@ -156,7 +156,7 @@ class Screen(Observer):
     def __init__(
         self,
         model_name: str = "gpt-4o-mini",
-        screenshots_dir: str = "../../.cache/gum/screenshots",
+        screenshots_dir: str = "../.cache/gum/screenshots",
         skip_when_visible: Optional[str | list[str]] = None,
         transcription_prompt: Optional[str] = None,
         summary_prompt: Optional[str] = None,

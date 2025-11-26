@@ -44,7 +44,7 @@ from datetime import datetime, timezone, timedelta
 ###############################################################################
 
 DEFAULT_MODEL = "gpt-4o-mini"
-DEFAULT_SCREENSHOTS_DIR = "../../.cache/gum/screenshots" #TODO Add a flag to CLI for dynamic screenshot basing
+DEFAULT_SCREENSHOTS_DIR = "../.cache/gum/screenshots" #TODO Add a flag to CLI for dynamic screenshot basing
 DEFAULT_HISTORY_K = 10 #TODO: modify this for OOM issues
 CAPTURE_INTERVAL_SEC = 5 # 10 -> 1
 SHORT_SLEEP_SEC = 0.1

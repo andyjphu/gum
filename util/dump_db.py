@@ -4,7 +4,7 @@ from gum.models import Proposition, Observation, init_db
 import json
 
 async def dump_db():
-    engine, Session = await init_db("gum.db", "../.cache/gum")
+    engine, Session = await init_db("gum.db", ".cache/gum")
     
     async with Session() as session:
         # Get all propositions
