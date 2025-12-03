@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Base dirs
 BASE_DIR = Path(os.getenv("GUM_BASE_DIR", Path(__file__).parent))
-SHARED_DIR = Path(os.getenv("GUM_SHARED_DIR", Path(__file__).parent))
+SHARED_DIR = Path(os.getenv("SHARED_BASE_DIR", Path(__file__).parent))
 
 DATA_DIR = Path(os.getenv("GUM_DATA_DIR", BASE_DIR / "data"))
 

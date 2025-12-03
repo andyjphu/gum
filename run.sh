@@ -1,4 +1,4 @@
-
+# Author: Andy Phu
 # imports all config key-value pairs as environment variables
 set -a
 . ../project.conf
