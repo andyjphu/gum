@@ -39,6 +39,8 @@ from gum.prompts.gum import AUDIT_PROMPT, PROPOSE_PROMPT, REVISE_PROMPT, SIMILAR
 from .batcher import ObservationBatcher
 import time
 
+from gum.config import CACHE_DIR
+
 class gum:
     """A class for managing general user models.
 
@@ -69,7 +71,7 @@ class gum:
         similar_prompt: str | None = None,
         revise_prompt: str | None = None,
         audit_prompt: str | None = None,
-        data_directory: str = "./.cache/gum", #TODO: adjust later, or maybe put in env
+        data_directory: str = CACHE_DIR, # was "./.cache/gum"
         db_name: str = "gum.db", 
         verbosity: int = logging.INFO,
         audit_enabled: bool = False,

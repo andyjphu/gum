@@ -3,9 +3,12 @@
 import os
 from pathlib import Path
 from typing import List
+
+from gum.config import TRAFFIC_LOG_DIR
+
 import shutil
 
-BASE = Path(__file__).parent / "data"
+BASE = TRAFFIC_LOG_DIR
 
 def save_to_file(
     text: str,

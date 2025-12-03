@@ -70,8 +70,7 @@ class Retro(Observer):
 
         # Validate and setup image directory
         self.images_dir = Path(images_dir).expanduser().resolve()
-        if not self.images_dir.exists():
-            raise ValueError(f"Images directory does not exist: {self.images_dir}")
+        self.images_dir.mkdir(parents=True, exist_ok=True)
         if not self.images_dir.is_dir():
             raise ValueError(f"Path is not a directory: {self.images_dir}")
 

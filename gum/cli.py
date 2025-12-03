@@ -8,8 +8,11 @@ import shutil
 from gum import gum
 
 from gum.observers.manual import Manual
+from gum.observers.retro import Retro
 from gum.key_listener import get_key_listener
 
+from gum.config import CACHE_DIR
+from gum.config import RETRO_IMAGES_DIR
 
 class QueryAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -42,6 +45,8 @@ def parse_args():
     # Batching configuration arguments
     parser.add_argument('--min-batch-size', type=int, help='Minimum number of observations to trigger batch processing')
     parser.add_argument('--max-batch-size', type=int, help='Maximum number of observations per batch')
+    
+    #TODO: add retroactive observer flag
 
     args = parser.parse_args()
 
@@ -56,7 +61,7 @@ async def main():
 
     # Handle --reset-cache before anything else
     if getattr(args, 'reset_cache', False):
-        cache_dir = os.path.expanduser('./.cache/gum/')
+        cache_dir = CACHE_DIR # was os.path.expanduser('./.cache/gum/')
         if os.path.exists(cache_dir):
             shutil.rmtree(cache_dir)
             print(f"Deleted cache directory: {cache_dir}")
@@ -108,6 +113,8 @@ async def main():
         print(f"Listening to {user_name} with model {model}")
 
         manual_observer = Manual(model_name=model, debug=False) #TODO: modfy debug
+        retro_observer = Retro(model_name=model, debug=True, images_dir=RETRO_IMAGES_DIR)
+
         key_listener = get_key_listener(manual_observer)
         key_listener.start()
 
@@ -115,6 +122,7 @@ async def main():
                 user_name,
                 model,
                 manual_observer,
+                retro_observer, 
                 min_batch_size=min_batch_size,
                 max_batch_size=max_batch_size
         ) as gum_instance:

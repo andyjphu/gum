@@ -39,12 +39,14 @@ from gum.prompts.screen import TRANSCRIPTION_PROMPT, SUMMARY_PROMPT #TODO: creat
 
 from datetime import datetime, timezone, timedelta
 
+from gum.config import CACHE_DIR
+
 ###############################################################################
 # Constants                                                                   #
 ###############################################################################
 
 DEFAULT_MODEL = "gpt-4o-mini"
-DEFAULT_SCREENSHOTS_DIR = "../.cache/gum/screenshots" #TODO Add a flag to CLI for dynamic screenshot basing
+DEFAULT_SCREENSHOTS_DIR =  CACHE_DIR / "gum" / "screenshots" # was ../.cache/gum/screenshots
 DEFAULT_HISTORY_K = 10 #TODO: modify this for OOM issues
 CAPTURE_INTERVAL_SEC = 5 # 10 -> 1
 SHORT_SLEEP_SEC = 0.1
