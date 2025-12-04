@@ -6,7 +6,7 @@ def get_key_listener(manual_observer):
         try:
             if key.char == 'p':
                 print("[KeyLogger] found that p was pressed")
-                manual_observer.toggle_recording()
+                # manual_observer.toggle_recording() #TODO: I disabled this for now
         except AttributeError:
             pass
 

@@ -39,10 +39,11 @@ class Retro(Observer):
     """Observer that processes an existing directory of screenshots retroactively.
 
     Unlike Manual which captures live, this observer reads from a pre-existing
-    image directory and processes them in chronological order.
+    image directory and processes them in chronological order. Supports both
+    flat directories and nested subdirectories (organized by video name).
 
     Args:
-        images_dir: Directory containing screenshots to process.
+        images_dir: Directory containing screenshots to process (supports subdirs).
         model_name: GPT model to use for vision analysis.
         transcription_prompt: Custom prompt for transcribing screenshots.
         summary_prompt: Custom prompt for summarizing screenshots.
@@ -81,8 +82,9 @@ class Retro(Observer):
         self.debug = debug
         self.process_delay = process_delay
 
-        # History
+        # History (per video/subfolder)
         self._history: deque[str] = deque(maxlen=max(0, history_k))
+        self._current_video: Optional[str] = None
 
         # OpenAI client
         self.client = AsyncOpenAI(
@@ -93,18 +95,31 @@ class Retro(Observer):
 
     # ─────────────────────────────── Helper methods
 
-    def _get_sorted_images(self) -> list[Path]:
-        """Get all images in directory, sorted by filename (assumes timestamp prefix).
+    def _get_video_name(self, img_path: Path) -> Optional[str]:
+        """Extract video/subfolder name from image path.
+        
+        Returns:
+            Subfolder name if image is in a subdirectory, None if in root.
+        """
+        relative = img_path.relative_to(self.images_dir)
+        if len(relative.parts) > 1:
+            return relative.parts[0]
+        return None
+
+    def _get_sorted_images_recursive(self) -> list[tuple[Path, Optional[str]]]:
+        """Get all images recursively, sorted by video then filename.
 
         Returns:
-            List of image paths sorted chronologically.
+            List of (image_path, video_name) tuples sorted by video then chronologically.
         """
-        images = [
-            p for p in self.images_dir.iterdir()
-            if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
-        ]
-        # Sort by filename - assumes format like "20241201_143052_periodic.jpg"
-        return sorted(images, key=lambda p: p.name)
+        images = []
+        for p in self.images_dir.rglob("*"):
+            if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS:
+                video_name = self._get_video_name(p)
+                images.append((p, video_name))
+        
+        # Sort by video name (None last), then by filename
+        return sorted(images, key=lambda x: (x[1] or "", x[0].name))
 
     @staticmethod
     def _encode_image(img_path: str) -> str:
@@ -112,7 +127,9 @@ class Retro(Observer):
         with open(img_path, "rb") as fh:
             return base64.b64encode(fh.read()).decode()
 
-    async def _call_gpt_vision(self, prompt: str, img_paths: list[str]) -> str:
+    async def _call_gpt_vision(
+        self, prompt: str, img_paths: list[str], video_name: Optional[str] = None
+    ) -> str:
         """Call GPT Vision API to analyze images."""
         # Encode images concurrently
         encoded_images = await asyncio.gather(
@@ -132,11 +149,12 @@ class Retro(Observer):
         if self.debug:
             self.logger.info(f"Sending {len(img_paths)} image(s) to vision API")
 
-        # Determine debug tag
+        # Determine debug tag with video name
+        video_tag = f"[{video_name}] " if video_name else ""
         if prompt == self.summary_prompt:
-            debug_tag = "[Retro Summary]"
+            debug_tag = f"[Retro Summary]"
         else:
-            debug_tag = "[Retro Transcription]"
+            debug_tag = f"[Retro Transcription]"
 
         rsp = await invoke(
             model=self.model_name,
@@ -144,6 +162,7 @@ class Retro(Observer):
             response_format={"type": "text"},
             debug_tag=debug_tag,
             debug_img_paths=img_paths,
+            debug_path=video_name,
             client=self.client,
         )
 
@@ -157,8 +176,15 @@ class Retro(Observer):
 
         return result
 
-    async def _process_and_emit(self, path: str) -> None:
+    async def _process_and_emit(self, path: str, video_name: Optional[str] = None) -> None:
         """Process a screenshot and emit an update."""
+        # Reset history if we switched to a new video
+        if video_name != self._current_video:
+            self._history.clear()
+            self._current_video = video_name
+            if self.debug:
+                self.logger.info(f"Switched to video: {video_name or 'root'}")
+
         self._history.append(path)
         prev_paths = list(self._history)
 
@@ -170,6 +196,7 @@ class Retro(Observer):
             transcription = await self._call_gpt_vision(
                 self.transcription_prompt,
                 [path],
+                video_name,
             )
         except Exception as exc:
             transcription = f"[transcription failed: {exc}]"
@@ -181,14 +208,18 @@ class Retro(Observer):
             summary = await self._call_gpt_vision(
                 self.summary_prompt,
                 prev_paths,
+                video_name,
             )
         except Exception as exc:
             summary = f"[summary failed: {exc}]"
             if self.debug:
                 self.logger.info(f"Summary error: {exc}")
 
-        # Emit combined result
+        # Emit combined result with video tag
         txt = (transcription + summary).strip()
+        if video_name:
+            txt = f"[{video_name}] {txt}"
+        
         if self.debug:
             self.logger.info(f"\n{'='*60}\nResult: {txt[:100]}\n{'='*60}\n")
 
@@ -199,7 +230,7 @@ class Retro(Observer):
     # ─────────────────────────────── Main worker
 
     async def _worker(self) -> None:
-        """Main worker that processes all images in the directory."""
+        """Main worker that processes all images in the directory recursively."""
         logger = logging.getLogger("Retro")
 
         if not logger.handlers:
@@ -212,24 +243,30 @@ class Retro(Observer):
         logger.setLevel(logging.INFO)
         logger.propagate = False
 
-        # Get sorted list of images
-        images = self._get_sorted_images()
+        # Get sorted list of images (recursive)
+        images = self._get_sorted_images_recursive()
         total = len(images)
 
         if total == 0:
             logger.warning(f"No images found in {self.images_dir}")
             return
 
-        logger.info(f"Found {total} images to process in {self.images_dir}")
+        # Count videos
+        video_names = set(v for _, v in images if v is not None)
+        if video_names:
+            logger.info(f"Found {total} images across {len(video_names)} videos in {self.images_dir}")
+        else:
+            logger.info(f"Found {total} images to process in {self.images_dir}")
 
-        for idx, img_path in enumerate(images):
+        for idx, (img_path, video_name) in enumerate(images):
             if not self._running:
                 logger.info("Retro observer stopped early.")
                 break
 
-            logger.info(f"Processing [{idx + 1}/{total}]: {img_path.name}")
+            video_tag = f"[{video_name}] " if video_name else ""
+            logger.info(f"Processing [{idx + 1}/{total}]: {video_tag}{img_path.name}")
 
-            await self._process_and_emit(str(img_path))
+            await self._process_and_emit(str(img_path), video_name)
 
             # Small delay to avoid overwhelming the API / queue
             if self.process_delay > 0:

@@ -13,10 +13,10 @@ BASE = TRAFFIC_LOG_DIR
 def save_to_file(
     text: str,
     filename: str, 
-    subfolder: str):
-
-    subfolder = subfolder.replace(" ", "").replace("[", "").replace("]", "")
+    subfolder: Path):
     
+    clean_name = subfolder.name.replace(" ", "").replace("[", "").replace("]", "")
+    subfolder = subfolder.parent / clean_name
     filename = filename.replace(" ", "").replace("[", "").replace("]", "")
     
     folder = BASE / subfolder
@@ -30,9 +30,11 @@ def save_to_file(
         
     return filepath
 
-def copy_imgs(img_paths: List[str], subfolder: str):
+def copy_imgs(img_paths: List[str], subfolder: Path):
     
-    subfolder = subfolder.replace(" ", "").replace("[", "").replace("]", "")
+    # subfolder = subfolder.replace(" ", "").replace("[", "").replace("]", "")
+    clean_name = subfolder.name.replace(" ", "").replace("[", "").replace("]", "")
+    subfolder = subfolder.parent / clean_name
     
     dest = BASE / subfolder
     dest.mkdir(parents=True, exist_ok=True)
