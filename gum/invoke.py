@@ -63,7 +63,7 @@ async def invoke(
     
     subfolder_path = Path(debug_path) / f"{request_fts}-{debug_tag}"
     
-    
+    fp = ""
     if debug_tag == "[Retro Transcription]" or debug_tag == "[Retro Summary]":
         
         fp = save_to_file(text=str(response.choices[0].message.content), subfolder=subfolder_path, filename=f"{response_fts}-{debug_tag}-RCV.txt")
