@@ -110,7 +110,7 @@ class gum:
         self.audit_prompt = audit_prompt or AUDIT_PROMPT
 
         self.client = AsyncOpenAI(
-            base_url=api_base or os.getenv("GUM_LM_API_BASE"), 
+            base_url=api_base or os.getenv("GUM_LM_API_BASE"),  #TODO: this is aconcerning on a standard basis
             api_key=api_key or os.getenv("GUM_LM_API_KEY") or os.getenv("OPENAI_API_KEY") or "None"
         )
 

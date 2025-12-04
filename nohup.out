@@ -1,0 +1,640 @@
+Deleted cache directory: /workspaces/ws/data/gum/.cache
+Default tempdir '/tmp/tmpd8t2mv5u' is not on the same filesystem with queue path '/workspaces/ws/data/gum/.cache/batches/queue',defaulting to '/workspaces/ws/data/gum/.cache/batches/queue'.
+2025-12-04 11:19:08,770 - [VIA-RETRO] - Found 468 images across 5 videos in /workspaces/ws/data/shared/screenshots
+2025-12-04 11:19:08,770 - [VIA-RETRO] - Processing [1/468]: [behind] 20251203_000000.jpg
+2025-12-04 11:19:08,770 - [VIA-RETRO] - Switched to video: behind
+2025-12-04 11:19:08,770 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg
+2025-12-04 11:19:08,772 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:08 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg']
+2025-12-04 11:19:09,115 - INFO - Started batcher with 0 items in queue
+2025-12-04 11:19:10 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111908-RetroTranscription/20251204_111910-RetroTranscription-RCV.txt
+2025-12-04 11:19:10,328 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+AMIGOS
+CODE
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:10,329 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:10 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg']
+2025-12-04 11:19:14 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111910-RetroSummary/20251204_111914-RetroSummary-RCV.txt
+2025-12-04 11:19:14,272 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The user is viewing a static, minimalist screen featuring a white circular logo centered on a blac 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:14,272 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+AMIGOS
+CODE
+```- The user is viewing a static, minimalist screen featuring a wh
+============================================================
+
+2025-12-04 11:19:14,272 - INFO - Processing update from Retro
+2025-12-04 11:19:14,273 - INFO - Added observation 994eb55f-02d5-49e1-87bf-e59d2f5bddc6 to queue (size: 1)
+2025-12-04 11:19:14,323 - [VIA-RETRO] - Processing [2/468]: [behind] 20251203_000005.jpg
+2025-12-04 11:19:14,323 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg
+2025-12-04 11:19:14,323 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:14 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg']
+2025-12-04 11:19:15 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111914-RetroTranscription/20251204_111915-RetroTranscription-RCV.txt
+2025-12-04 11:19:15,357 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+WORKING AND CODING FOR OVER 1 HOUR
+ENJOY
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:15,358 - [VIA-RETRO] - Sending 2 image(s) to vision API
+2025-12-04 11:19:15 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg']
+Deleted cache directory: /workspaces/ws/data/gum/.cache
+Default tempdir '/tmp/tmpx43qxwfd' is not on the same filesystem with queue path '/workspaces/ws/data/gum/.cache/batches/queue',defaulting to '/workspaces/ws/data/gum/.cache/batches/queue'.
+2025-12-04 11:19:23,097 - [VIA-RETRO] - Found 468 images across 5 videos in /workspaces/ws/data/shared/screenshots
+2025-12-04 11:19:23,097 - [VIA-RETRO] - Processing [1/468]: [behind] 20251203_000000.jpg
+2025-12-04 11:19:23,097 - [VIA-RETRO] - Switched to video: behind
+2025-12-04 11:19:23,097 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg
+2025-12-04 11:19:23,099 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:23 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg']
+2025-12-04 11:19:23,438 - INFO - Started batcher with 0 items in queue
+2025-12-04 11:19:23 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111923-RetroTranscription/20251204_111923-RetroTranscription-RCV.txt
+2025-12-04 11:19:23,851 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+AMIGOS
+CODE
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:23,852 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:23 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg']
+2025-12-04 11:19:24 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111915-RetroSummary/20251204_111924-RetroSummary-RCV.txt
+2025-12-04 11:19:24,375 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The user is viewing the “AMIGOS CODE” logo, which is centered on a black screen, indicating they a 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:24,375 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+WORKING AND CODING FOR OVER 1 HOUR
+ENJOY
+```- The user is viewing the “AMIGOS C
+============================================================
+
+2025-12-04 11:19:24,376 - INFO - Processing update from Retro
+2025-12-04 11:19:24,376 - INFO - Added observation 2f3da501-31de-4da1-b908-544a23f2c1ad to queue (size: 2)
+2025-12-04 11:19:24,426 - [VIA-RETRO] - Processing [3/468]: [behind] 20251203_000010.jpg
+2025-12-04 11:19:24,426 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg
+2025-12-04 11:19:24,428 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:24 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg']
+2025-12-04 11:19:26 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111924-RetroTranscription/20251204_111926-RetroTranscription-RCV.txt
+2025-12-04 11:19:26,241 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+RELEASING TO PROD
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:26,243 - [VIA-RETRO] - Sending 3 image(s) to vision API
+2025-12-04 11:19:26 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg']
+2025-12-04 11:19:30 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111923-RetroSummary/20251204_111930-RetroSummary-RCV.txt
+2025-12-04 11:19:30,589 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The user is viewing a static, minimalist screen featuring a white circular logo centered on a blac 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:30,590 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+AMIGOS
+CODE
+```- The user is viewing a static, minimalist screen featuring a wh
+============================================================
+
+2025-12-04 11:19:30,590 - INFO - Processing update from Retro
+2025-12-04 11:19:30,590 - INFO - Added observation d4dc961f-6d87-4714-900a-53af9734225a to queue (size: 1)
+2025-12-04 11:19:30,640 - [VIA-RETRO] - Processing [2/468]: [behind] 20251203_000005.jpg
+2025-12-04 11:19:30,641 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg
+2025-12-04 11:19:30,641 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:30 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg']
+2025-12-04 11:19:31 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111930-RetroTranscription/20251204_111931-RetroTranscription-RCV.txt
+2025-12-04 11:19:31,438 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+WORKING AND CODING FOR OVER 1 HOUR
+ENJOY
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:31,439 - [VIA-RETRO] - Sending 2 image(s) to vision API
+2025-12-04 11:19:31 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg']
+2025-12-04 11:19:33 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111931-RetroSummary/20251204_111933-RetroSummary-RCV.txt
+2025-12-04 11:19:33,983 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The user is viewing the "AMIGOS CODE" logo, which is centered on a black screen, indicating they a 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:33,983 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+WORKING AND CODING FOR OVER 1 HOUR
+ENJOY
+```- The user is viewing the "AMIGOS C
+============================================================
+
+2025-12-04 11:19:33,983 - INFO - Processing update from Retro
+2025-12-04 11:19:33,983 - INFO - Added observation a4c91908-4b67-4894-bdc8-647af95644da to queue (size: 2)
+2025-12-04 11:19:34,033 - [VIA-RETRO] - Processing [3/468]: [behind] 20251203_000010.jpg
+2025-12-04 11:19:34,034 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg
+2025-12-04 11:19:34,035 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:34 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg']
+2025-12-04 11:19:34 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111934-RetroTranscription/20251204_111934-RetroTranscription-RCV.txt
+2025-12-04 11:19:34,713 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+RELEASING TO PROD
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:34,716 - [VIA-RETRO] - Sending 3 image(s) to vision API
+2025-12-04 11:19:34 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg']
+2025-12-04 11:19:34 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111926-RetroSummary/20251204_111934-RetroSummary-RCV.txt
+2025-12-04 11:19:34,894 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The video opens with a black screen displaying the "AMIGOS CODE" logo, establishing the channel or 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:34,894 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+RELEASING TO PROD
+```- The video opens with a black screen displaying the "AMIG
+============================================================
+
+2025-12-04 11:19:34,895 - INFO - Processing update from Retro
+2025-12-04 11:19:34,895 - INFO - Added observation 334eca0f-cde5-4900-904a-2ad99b684fcf to queue (size: 3)
+2025-12-04 11:19:34,945 - [VIA-RETRO] - Processing [4/468]: [behind] 20251203_000015.jpg
+2025-12-04 11:19:34,945 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg
+2025-12-04 11:19:34,946 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:34 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg']
+2025-12-04 11:19:37 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111934-RetroTranscription/20251204_111937-RetroTranscription-RCV.txt
+2025-12-04 11:19:37,551 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+RELEASING TO PROD
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:37,553 - [VIA-RETRO] - Sending 4 image(s) to vision API
+2025-12-04 11:19:37 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg']
+2025-12-04 11:19:45 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111934-RetroSummary/20251204_111945-RetroSummary-RCV.txt
+2025-12-04 11:19:45,106 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The video opens with a black screen displaying the "AMIGOS CODE" logo, establishing the channel or 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:45,106 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+RELEASING TO PROD
+```- The video opens with a black screen displaying the "AMIG
+============================================================
+
+2025-12-04 11:19:45,106 - INFO - Processing update from Retro
+2025-12-04 11:19:45,107 - INFO - Added observation 0f31c3ce-5ae9-45bb-bfc1-2f20a8a43fc7 to queue (size: 3)
+2025-12-04 11:19:45,157 - [VIA-RETRO] - Processing [4/468]: [behind] 20251203_000015.jpg
+2025-12-04 11:19:45,157 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg
+2025-12-04 11:19:45,158 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:45 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg']
+2025-12-04 11:19:45 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111945-RetroTranscription/20251204_111945-RetroTranscription-RCV.txt
+2025-12-04 11:19:45,838 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+RELEASING TO PROD
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:45,841 - [VIA-RETRO] - Sending 4 image(s) to vision API
+2025-12-04 11:19:45 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg']
+2025-12-04 11:19:47 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111937-RetroSummary/20251204_111947-RetroSummary-RCV.txt
+2025-12-04 11:19:47,843 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The video opens with a logo for "AMIGOS CODE" centered on a black screen, establishing the brand o 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:47,843 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+RELEASING TO PROD
+```- The video opens with a logo for "AMIGOS CODE" centered o
+============================================================
+
+2025-12-04 11:19:47,843 - INFO - Processing update from Retro
+2025-12-04 11:19:47,844 - INFO - Added observation 2c2472d4-69ca-402e-8489-b77fb6206483 to queue (size: 4)
+2025-12-04 11:19:47,894 - [VIA-RETRO] - Processing [5/468]: [behind] 20251203_000020.jpg
+2025-12-04 11:19:47,894 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg
+2025-12-04 11:19:47,895 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:47 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg']
+2025-12-04 11:19:49 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111947-RetroTranscription/20251204_111949-RetroTranscription-RCV.txt
+2025-12-04 11:19:49,844 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+RELEASING TO PROD
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:49,847 - [VIA-RETRO] - Sending 5 image(s) to vision API
+2025-12-04 11:19:49 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg']
+2025-12-04 11:19:57,215 - INFO - Stopped batcher
+Listening to andrew with model Qwen/Qwen3-VL-8B-Instruct
+New observation from Retro: [behind] ```markdown
+AMIGOS
+CODE
+```- The user is viewing a static, minimalist screen featuring a white circular logo centered on a black background.
+- The logo displays the text “AMIGOS” on the top line and “CODE” on the bottom line, with the letter “O” in both words replaced by a stylized curly brace ({}), suggesting a programming or coding theme.
+- There are no visible user interactions, cursor movements, or changes in the screen content across the provided images.
+- The user is likely waiting for a system to load, observing a splash screen, or viewing a branded introductory screen for an application or website.
+New observation from Retro: [behind] ```markdown
+WORKING AND CODING FOR OVER 1 HOUR
+ENJOY
+```- The user is viewing the "AMIGOS CODE" logo, which is centered on a black screen, indicating they are likely at the start of a session or on a loading screen for a coding-related application or platform.
+- The user is viewing a text prompt that reads "WORKING AND CODING FOR OVER 1 HOUR ENJOY", suggesting they have been actively engaged in coding for an extended period and are now being acknowledged or encouraged to continue.
+New observation from Retro: [behind] ```markdown
+RELEASING TO PROD
+```- The video opens with a black screen displaying the "AMIGOS CODE" logo, establishing the channel or brand identity.
+- A title card appears, stating "WORKING AND CODING FOR OVER 1 HOUR ENJOY," setting the context for a long-form coding session.
+- The scene shifts to a man, viewed from behind, seated at a white desk. He is actively engaged in his work, with his right hand positioned over a white mouse, indicating he is navigating or interacting with the content on his monitor.
+- The monitor displays a webpage, likely a product or service page, featuring a dark-themed graphic with the text "Build Mobile and Web Apps Fast." The on-screen text "RELEASING TO PROD" suggests he is in the final stages of deploying or preparing a software release.
+- The timestamp "00:01:20:04" in the bottom-left corner confirms the video is at the 1 hour, 20 minute, and 4 second mark, aligning with the "over 1 hour" claim from the title card.
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspaces/ws/gum/gum/cli.py", line 130, in main
+    await asyncio.Future()  # run forever (Ctrl-C to stop)
+    ^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/conda/bin/gum", line 8, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/workspaces/ws/gum/gum/cli.py", line 136, in cli
+    asyncio.run(main())
+  File "/opt/conda/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.12/asyncio/runners.py", line 123, in run
+    raise KeyboardInterrupt()
+KeyboardInterrupt
+2025-12-04 11:19:59 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111949-RetroSummary/20251204_111959-RetroSummary-RCV.txt
+2025-12-04 11:19:59,132 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The video opens with a logo for "AMIGOS CODE" and a title card stating "WORKING AND CODING FOR OVE 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:19:59,132 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+RELEASING TO PROD
+```- The video opens with a logo for "AMIGOS CODE" and a titl
+============================================================
+
+2025-12-04 11:19:59,132 - INFO - Processing update from Retro
+2025-12-04 11:19:59,133 - INFO - Added observation 7ac12801-1c5f-4a4a-a7f5-08816396d48e to queue (size: 5)
+2025-12-04 11:19:59,133 - INFO - Processing batch of 5 observations
+2025-12-04 11:19:59,183 - [VIA-RETRO] - Processing [6/468]: [behind] 20251203_000025.jpg
+2025-12-04 11:19:59,183 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000025.jpg
+2025-12-04 11:19:59,184 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:19:59 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000025.jpg']
+2025-12-04 11:19:59 [VIA-INVOKE] [Proposition Construct] request sent, img_paths: 
+2025-12-04 11:20:01 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_111959-RetroTranscription/20251204_112001-RetroTranscription-RCV.txt
+2025-12-04 11:20:01,108 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000025.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+RELEASING TO PROD
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:20:01,113 - [VIA-RETRO] - Sending 6 image(s) to vision API
+2025-12-04 11:20:01 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000025.jpg']
+2025-12-04 11:20:10 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_112001-RetroSummary/20251204_112010-RetroSummary-RCV.txt
+2025-12-04 11:20:10,953 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000025.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The video opens with a logo for "AMIGOS CODE" and a title card stating "WORKING AND CODING FOR OVE 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:20:10,953 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+RELEASING TO PROD
+```- The video opens with a logo for "AMIGOS CODE" and a titl
+============================================================
+
+2025-12-04 11:20:10,953 - INFO - Processing update from Retro
+2025-12-04 11:20:10,953 - INFO - Added observation e7fa9c41-408c-4650-99d4-cf38b186ef0d to queue (size: 1)
+2025-12-04 11:20:11,004 - [VIA-RETRO] - Processing [7/468]: [behind] 20251203_000030.jpg
+2025-12-04 11:20:11,004 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000030.jpg
+2025-12-04 11:20:11,005 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:20:11 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000030.jpg']
+2025-12-04 11:20:12 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_112011-RetroTranscription/20251204_112012-RetroTranscription-RCV.txt
+2025-12-04 11:20:12,769 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000030.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+RELEASING TO PROD
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:20:12,773 - [VIA-RETRO] - Sending 7 image(s) to vision API
+2025-12-04 11:20:12 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000025.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000030.jpg']
+Deleted cache directory: /workspaces/ws/data/gum/.cache
+Default tempdir '/tmp/tmphg65kbrr' is not on the same filesystem with queue path '/workspaces/ws/data/gum/.cache/batches/queue',defaulting to '/workspaces/ws/data/gum/.cache/batches/queue'.
+2025-12-04 11:20:23,948 - [VIA-RETRO] - Found 468 images across 5 videos in /workspaces/ws/data/shared/screenshots
+2025-12-04 11:20:23,949 - [VIA-RETRO] - Processing [1/468]: [behind] 20251203_000000.jpg
+2025-12-04 11:20:23,949 - [VIA-RETRO] - Switched to video: behind
+2025-12-04 11:20:23,949 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg
+2025-12-04 11:20:23,950 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:20:23 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg']
+2025-12-04 11:20:24,286 - INFO - Started batcher with 0 items in queue
+2025-12-04 11:20:24 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_112023-RetroTranscription/20251204_112024-RetroTranscription-RCV.txt
+2025-12-04 11:20:24,825 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+AMIGOS
+CODE
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:20:24,825 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:20:24 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg']
+2025-12-04 11:20:25 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_112012-RetroSummary/20251204_112025-RetroSummary-RCV.txt
+2025-12-04 11:20:25,768 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000025.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000030.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The video opens with a logo for "AMIGOS CODE" and a title card stating "WORKING AND CODING FOR OVE 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:20:25,769 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+RELEASING TO PROD
+```- The video opens with a logo for "AMIGOS CODE" and a titl
+============================================================
+
+2025-12-04 11:20:25,769 - INFO - Processing update from Retro
+2025-12-04 11:20:25,769 - INFO - Added observation 8910e5a3-a86e-4353-8ef7-3d6e98f9c10a to queue (size: 2)
+2025-12-04 11:20:25,819 - [VIA-RETRO] - Processing [8/468]: [behind] 20251203_000035.jpg
+2025-12-04 11:20:25,820 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000035.jpg
+2025-12-04 11:20:25,821 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:20:25 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000035.jpg']
+2025-12-04 11:20:27 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_112025-RetroTranscription/20251204_112027-RetroTranscription-RCV.txt
+2025-12-04 11:20:27,634 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000035.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+RELEASING TO PROD
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:20:27,641 - [VIA-RETRO] - Sending 8 image(s) to vision API
+2025-12-04 11:20:27 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000015.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000020.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000025.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000030.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000035.jpg']
+2025-12-04 11:20:34 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_112024-RetroSummary/20251204_112034-RetroSummary-RCV.txt
+2025-12-04 11:20:34,943 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The user is viewing a static, minimalist screen featuring a white circular logo centered on a blac 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:20:34,944 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+AMIGOS
+CODE
+```- The user is viewing a static, minimalist screen featuring a wh
+============================================================
+
+2025-12-04 11:20:34,944 - INFO - Processing update from Retro
+2025-12-04 11:20:34,944 - INFO - Added observation 9834573c-023d-4ce9-a5e2-d518659bb305 to queue (size: 1)
+2025-12-04 11:20:34,994 - [VIA-RETRO] - Processing [2/468]: [behind] 20251203_000005.jpg
+2025-12-04 11:20:34,994 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg
+2025-12-04 11:20:34,995 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:20:34 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg']
+2025-12-04 11:20:37 [VIA_INVOKE] [Retro Transcription] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_112034-RetroTranscription/20251204_112037-RetroTranscription-RCV.txt
+2025-12-04 11:20:37,351 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ ```markdown
+WORKING AND CODING FOR OVER 1 HOUR
+ENJOY
+``` 
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:20:37,352 - [VIA-RETRO] - Sending 2 image(s) to vision API
+2025-12-04 11:20:37 [VIA-INVOKE] [Retro Summary] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg']
+2025-12-04 11:20:39 [VIA_INVOKE] [Proposition Construct] response received, stored at 
+2025-12-04 11:20:39 [VIA-INVOKE] [Proposition Filter] request sent, img_paths: 
+2025-12-04 11:20:40 [VIA_INVOKE] [Retro Summary] response received, stored at /workspaces/ws/data/shared/log/behind/20251204_112037-RetroSummary/20251204_112040-RetroSummary-RCV.txt
+2025-12-04 11:20:40,471 - [VIA-RETRO] - 
+
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+For: 
+['/workspaces/ws/data/shared/screenshots/behind/20251203_000000.jpg', '/workspaces/ws/data/shared/screenshots/behind/20251203_000005.jpg'] 
+
+ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇ ▇  
+
+ Received:
+ - The user is viewing a black screen with a white circular logo centered, which reads "AMIGOS CODE"  
+▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇
+
+2025-12-04 11:20:40,471 - [VIA-RETRO] - 
+============================================================
+Result: [behind] ```markdown
+WORKING AND CODING FOR OVER 1 HOUR
+ENJOY
+```- The user is viewing a black scree
+============================================================
+
+2025-12-04 11:20:40,471 - INFO - Processing update from Retro
+2025-12-04 11:20:40,471 - INFO - Added observation 7e5daf65-cf82-4b76-b7cd-b012f205347d to queue (size: 2)
+2025-12-04 11:20:40,522 - [VIA-RETRO] - Processing [3/468]: [behind] 20251203_000010.jpg
+2025-12-04 11:20:40,522 - [VIA-RETRO] - Processing screenshot: /workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg
+2025-12-04 11:20:40,523 - [VIA-RETRO] - Sending 1 image(s) to vision API
+2025-12-04 11:20:40 [VIA-INVOKE] [Retro Transcription] request sent, img_paths: ['/workspaces/ws/data/shared/screenshots/behind/20251203_000010.jpg']
