@@ -1,85 +1,82 @@
 # Auth: Andy Phu
-# Introduced to centralize communications to VLLM server
+# Centralized VLLM server communications
 
-from typing import List, Dict, Any, AnyStr
+from typing import List, Dict, Any
 from openai import AsyncOpenAI
-from datetime import datetime, timezone, timedelta
-import logging
-from .data import save_to_file, copy_imgs
+from datetime import datetime, timezone
 from pathlib import Path
+import logging
+import os
 
-UTCm0 = timezone(timedelta(hours=0))
+from .data import save_to_file, copy_imgs
+
+logger = logging.getLogger("Invoke")
+logger.setLevel(logging.INFO)
+logger.propagate = False
+if not logger.handlers:
+    logger.addHandler(logging.StreamHandler())
+
+
+def newest_img_timestamp(img_paths) -> str:
+    """Get timestamp from newest image filename, or current time if none."""
+    if not img_paths:
+        return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    
+    # Handle both single path and list of paths
+    paths = img_paths if isinstance(img_paths, list) else [img_paths]
+    
+    try:
+        # Extract timestamp from filename (format: YYYYMMDD_HHMMSS.jpg)
+        timestamps = []
+        for p in paths:
+            if p:
+                filename = Path(p).stem  # e.g., "20251203_000000"
+                timestamps.append(filename)
+        
+        return max(timestamps) if timestamps else datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    except (ValueError, OSError):
+        return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+
 
 async def invoke(
-    client: AsyncOpenAI, 
-    model: str, 
-    messages: List[Dict[str, Any]], 
+    client: AsyncOpenAI,
+    model: str,
+    messages: List[Dict[str, Any]],
     response_format: dict,
     debug_tag: str = "",
-    debug_img_paths: str = "", 
-    debug_path: Path = "",
-    **kwargs,  # generalized variable to accept any further args
-    ): 
+    debug_img_paths = "",  # Keep original type
+    debug_path: Path = "",  # Keep original default
+    **kwargs,
+):
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     
-    logger = logging.getLogger("Invoke")
-    logger.setLevel(logging.INFO)
-    logger.propagate = False
-    if not logger.handlers:
-        h = logging.StreamHandler()
-        h.setFormatter(logging.Formatter("%(message)s"))
-        logger.addHandler(h)
-        
-    now = datetime.now(UTCm0) 
-    ts = now.strftime("%Y-%m-%d %H:%M:%S")
-    request_fts = now.strftime("%Y%m%d_%H%M%S")
+    # Folder named by newest image
+    folder_ts = newest_img_timestamp(debug_img_paths)
+    subfolder_path = Path(debug_path) / f"{folder_ts}-{debug_tag}"
     
-    subfolder_path = Path(debug_path) / f"{request_fts}-{debug_tag}"
+    save_debug = debug_tag in ("[Retro Transcription]", "[Retro Summary]")
     
-    if debug_tag == "[Retro Transcription]" or debug_tag == "[Retro Summary]": #TODO: modify filter? 
-        
-        if(debug_img_paths): 
-            fp = save_to_file(text=f"{messages}", subfolder=subfolder_path, filename=f"{request_fts}-{debug_tag}-SND.txt")
-            copy_imgs(img_paths = debug_img_paths, subfolder=subfolder_path )
-        else:
-            fp = save_to_file(text=f"{messages}", subfolder=subfolder_path, filename=f"{request_fts}-{debug_tag}-SND.txt")
-              
-    logger.info(f"{ts} [VIA-INVOKE] {debug_tag} request sent, img_paths: {debug_img_paths}")
+    if save_debug:
+        save_to_file(text=f"{messages}", subfolder=subfolder_path, filename=f"{folder_ts}-{debug_tag}-SND.txt")
+        if debug_img_paths:
+            copy_imgs(img_paths=debug_img_paths, subfolder=subfolder_path)
+    
+    logger.info(f"{ts} [INVOKE] {debug_tag} sent, img_paths: {debug_img_paths}")
     
     response = await client.chat.completions.create(
         model=model,
-        messages = messages,
-        response_format = response_format,   
-        
-       #max_tokens = 10000, # TODO: adjust this too? 
-        frequency_penalty = 0.01, # TODO: adjust this 
-        temperature = 0.1,
-        **kwargs, 
+        messages=messages,
+        response_format=response_format,
+        frequency_penalty=0.01,
+        temperature=0.1,
+        **kwargs,
     )
     
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     
-    now = datetime.now(UTCm0) 
-    response_fts = now.strftime("%Y%m%d_%H%M%S")
-    ts = now.strftime("%Y-%m-%d %H:%M:%S")
+    if save_debug:
+        save_to_file(text=str(response.choices[0].message.content), subfolder=subfolder_path, filename=f"{folder_ts}-{debug_tag}-RCV.txt")
     
-    subfolder_path = Path(debug_path) / f"{request_fts}-{debug_tag}"
-    
-    fp = ""
-    if debug_tag == "[Retro Transcription]" or debug_tag == "[Retro Summary]":
-        
-        fp = save_to_file(text=str(response.choices[0].message.content), subfolder=subfolder_path, filename=f"{response_fts}-{debug_tag}-RCV.txt")
-    
-    logger.info(f"{ts} [VIA_INVOKE] {debug_tag} response received, stored at {fp}")
-    
+    logger.info(f"{ts} [INVOKE] {debug_tag} received")
     
     return response
-    
-    
-    
-    
-# Based on     
-# rsp = await self.client.chat.completions.create(
-#     model=self.model_name,
-#     messages=[{"role": "user", "content": content}],
-#     response_format={"type": "text"},
-# )
-# return rsp.choices[0].message.content
