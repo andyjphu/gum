@@ -4,6 +4,12 @@ set -a
 . ../project.conf
 set +a
 
+# consider running pip install -e .; if gum dnepip install -e .
+
+# also consider:
+# sudo mkdir -p /workspaces/ws/data/gum
+# sudo chown -R $(whoami) /workspaces/ws/data
+
 gum  --reset-cache
 gum  --user-name "andrew" --model "Qwen/Qwen3-VL-8B-Instruct"
 
