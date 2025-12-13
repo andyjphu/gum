@@ -127,7 +127,9 @@ async def main():
                 max_batch_size=max_batch_size
         ) as gum_instance:
             try:
-                await asyncio.Future()  # run forever (Ctrl-C to stop)
+                #await asyncio.Future()  # run forever (Ctrl-C to stop)
+                await retro_observer.stopped.wait() # don't run forever, stop when retro is done, TODO: verify this works
+            
             finally:
                 key_listener.stop()
 

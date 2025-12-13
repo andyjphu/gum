@@ -92,6 +92,9 @@ class Retro(Observer):
             api_key=api_key or os.getenv("OPENAI_API_KEY") or "no-key",
         )
         self.logger = logging.getLogger("Retro")
+        
+        # To ensure gum stops when retro stops
+        self.stopped = asyncio.Event()
 
     # ─────────────────────────────── Helper methods
 
@@ -273,3 +276,4 @@ class Retro(Observer):
                 await asyncio.sleep(self.process_delay)
 
         logger.info(f"Retro observer completed. Processed {idx + 1} images.")
+        self.stopped.set()
