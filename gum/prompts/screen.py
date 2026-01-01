@@ -1,15 +1,30 @@
-TRANSCRIPTION_PROMPT = """Transcribe in markdown ALL the content from the screenshots of the user's screen.
+TRANSCRIPTION_PROMPT = """Transcribe in markdown ALL observable content from the provided visual input.
 
-NEVER SUMMARIZE ANYTHING. You must transcribe everything EXACTLY, word for word, but don't repeat yourself.
+NEVER SUMMARIZE. Transcribe everything EXACTLY as observed, word for word.
 
-ALWAYS include all the application names, file paths, and website URLs in your transcript.
+## Capture
 
-Create a FINAL structured markdown transcription."""
+**Digital (screens, displays):**
+- Application names, window titles, file paths, URLs
+- All visible text: menus, dialogs, notifications, content
+- Active/focused elements and cursor position
 
-SUMMARY_PROMPT = """Provide a detailed description of the actions occuring across the provided images. The images are in the order they were taken.
+**Physical (real-world, egocentric):**
+- Visible text: signs, labels, documents, screens
+- Objects being interacted with
+- Hands and current action being performed
 
-Include as much relevant detail as possible, but remain concise.
+Output a single structured markdown transcription of the current state."""
 
-Generate a handful of bullet points and reference *specific* actions the user is taking.
+SUMMARY_PROMPT = """Describe the actions occurring across the provided images, presented in chronological order.
 
-Keep in mind that that the content on the screen is what the user is viewing. It may not be what the user is actively doing or what they believe, so practice caution when making assumptions."""
+## Guidelines
+
+- Refer to individuals as "the person" or by observable role (e.g., "the driver", "the presenter") rather than assuming a single "user"
+- Describe observable actions only—avoid inferring intent, beliefs, or attention
+- For screen content: distinguish between what is displayed vs. what is being actively manipulated
+- For physical actions: describe what hands/body are doing and objects being interacted with
+
+## Output
+
+Provide concise bullet points describing specific, observable actions across the sequence."""
