@@ -122,7 +122,7 @@ async def main():
             try:
                 #await asyncio.Future()  # run forever (Ctrl-C to stop)
                 await retro_observer.stopped.wait() 
-            except:
+            except Exception:
                 print("Retro observer failed to loop until done")
 
 
