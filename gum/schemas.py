@@ -39,7 +39,7 @@ class PropositionSchema(BaseModel):
 
 class Update(BaseModel):
     content: str = Field(..., description="The content of the update")
-    content_type: Literal["input_text", "input_image"] = Field(..., description="The type of the update")
+    content_type: Literal["input_text", "input_image", "state_json", "collapsed_state_json"] = Field(..., description="The type of the update")
 
 RelationLabel = Literal["IDENTICAL", "SIMILAR", "UNRELATED"]
 
