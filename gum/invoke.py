@@ -17,7 +17,7 @@ if not logger.handlers:
     logger.addHandler(logging.StreamHandler())
 
 
-def newest_img_timestamp(img_paths) -> str:
+def newest_img_timestamp(img_paths: List[str] | str | None) -> str:
     """Get timestamp from newest image filename, or current time if none."""
     if not img_paths:
         return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -44,23 +44,25 @@ async def invoke(
     messages: List[Dict[str, Any]],
     response_format: dict,
     debug_tag: str = "",
-    debug_img_paths = "",  # Keep original type
-    debug_path: Path = "",  # Keep original default
+    debug_img_paths: List[str] | str | None = None,
+    debug_path: Path | None = None,
     **kwargs,
 ):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     
     # Folder named by newest image
     folder_ts = newest_img_timestamp(debug_img_paths)
-    subfolder_path = Path(debug_path) / f"{folder_ts}-{debug_tag}"
+    debug_path_value = debug_path or Path("")
+    subfolder_path = debug_path_value / f"{folder_ts}-{debug_tag}"
     
-    save_debug = debug_tag in ("[Retro Transcription]", "[Retro Summary]")
+    save_debug = debug_tag in ("[Retro]", "[Retro Transcription]", "[Retro Summary]")
     
     if save_debug:
         save_to_file(text=f"{messages}", subfolder=subfolder_path, filename=f"{folder_ts}-{debug_tag}-SND.txt")
         if debug_img_paths:
-            copy_imgs(img_paths=debug_img_paths, subfolder=subfolder_path)
-    
+            # Convert to list if it's a single string
+            img_list = debug_img_paths if isinstance(debug_img_paths, list) else [debug_img_paths]
+            copy_imgs(img_paths=img_list, subfolder=subfolder_path)
     logger.info(f"{ts} [INVOKE] {debug_tag} sent, img_paths: {debug_img_paths}")
     
     response = await client.chat.completions.create(
