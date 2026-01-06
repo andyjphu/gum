@@ -7,9 +7,7 @@ import asyncio
 import shutil
 from gum import gum
 
-from gum.observers.manual import Manual
 from gum.observers.retro import Retro
-from gum.key_listener import get_key_listener
 
 from gum.config import CACHE_DIR
 from gum.config import RETRO_IMAGES_DIR
@@ -112,26 +110,20 @@ async def main():
     else:
         print(f"Listening to {user_name} with model {model}")
 
-        manual_observer = Manual(model_name=model, debug=False) #TODO: modfy debug
         retro_observer = Retro(model_name=model, debug=True, images_dir=RETRO_IMAGES_DIR)
-
-        key_listener = get_key_listener(manual_observer)
-        key_listener.start()
 
         async with gum(
                 user_name,
                 model,
-                manual_observer,
                 retro_observer, 
                 min_batch_size=min_batch_size,
                 max_batch_size=max_batch_size
         ) as gum_instance:
             try:
                 #await asyncio.Future()  # run forever (Ctrl-C to stop)
-                await retro_observer.stopped.wait() # don't run forever, stop when retro is done, TODO: verify this works
-            
-            finally:
-                key_listener.stop()
+                await retro_observer.stopped.wait() 
+            except:
+                print("Retro observer failed to loop until done")
 
 
 def cli():
