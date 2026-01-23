@@ -45,17 +45,21 @@ async def invoke(
     response_format: dict,
     debug_tag: str = "",
     debug_img_paths: List[str] | str | None = None,
-    debug_path: Path | None = None,
+    debug_path: Path | str | None = None,
     **kwargs,
 ):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     
     # Folder named by newest image
     folder_ts = newest_img_timestamp(debug_img_paths)
-    debug_path_value = debug_path or Path("")
+    debug_path_value = Path(debug_path) if debug_path else Path("")
     subfolder_path = debug_path_value / f"{folder_ts}-{debug_tag}"
     
-    save_debug = debug_tag in ("[Retro]", "[Retro Transcription]", "[Retro Summary]")
+    # Save debug for Retro tags (including pass suffixes like [Retro_P1], [Retro_P2])
+    save_debug = (
+        debug_tag.startswith("[Retro") or
+        debug_tag in ("[Retro]", "[Retro Transcription]", "[Retro Summary]")
+    )
     
     if save_debug:
         save_to_file(text=f"{messages}", subfolder=subfolder_path, filename=f"{folder_ts}-{debug_tag}-SND.txt")

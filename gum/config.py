@@ -17,3 +17,16 @@ TRAFFIC_LOG_DIR = Path(os.getenv("GUM_TRAFFIC_LOG_DIR", SHARED_DIR / "log"))
 
 # to store images taken ahead of run to be analyzed retroactively
 RETRO_IMAGES_DIR = Path(os.getenv("GUM_RETRO_IMAGES_DIR", SHARED_DIR / "screenshots"))
+
+# =============================================================================
+# Multi-pass configuration
+# =============================================================================
+
+# Number of analysis passes (1 = single pass, 2+ = multi-pass with refinement)
+DEFAULT_NUM_PASSES = int(os.getenv("GUM_NUM_PASSES", "2"))
+
+# Maximum unique states to include in context window for re-analysis
+DEFAULT_CONTEXT_WINDOW_SIZE = int(os.getenv("GUM_CONTEXT_WINDOW_SIZE", "20"))
+
+# Directory for storing pass outputs (states, summaries)
+PASS_OUTPUT_DIR = Path(os.getenv("GUM_PASS_OUTPUT_DIR", DATA_DIR / "passes"))

@@ -1,8 +1,72 @@
 # schemas.py
 
 from __future__ import annotations
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
+
+# =============================================================================
+# STATE EXTRACTION SCHEMAS (for egocentric footage)
+# =============================================================================
+
+class StateItem(BaseModel):
+    """
+    A single user state extracted from egocentric footage.
+    Uses extra="allow" to support future field additions.
+    """
+    state: str = Field(..., description="Compound state string (e.g., 'walking_while_on_phone')")
+    confidence: int = Field(..., ge=1, le=10, description="Confidence score from 1 (low) to 10 (high)")
+
+    model_config = ConfigDict(extra="allow")  # Extensible for future fields
+
+
+class StateExtractionSchema(BaseModel):
+    """
+    Output from state extraction prompt (Pass 1).
+    Single state per frame.
+    """
+    state: str = Field(..., description="Compound state string (e.g., 'walking_while_on_phone')")
+    confidence: int = Field(..., ge=1, le=10, description="Confidence score from 1 (low) to 10 (high)")
+
+    model_config = ConfigDict(extra="allow")  # Extensible
+
+
+class RefinedStateItem(BaseModel):
+    """
+    A state from re-analysis pass (Pass 2+) with collapse tracking.
+    """
+    state: str = Field(..., description="State string (may be collapsed from prior state)")
+    confidence: int = Field(..., ge=1, le=10, description="Confidence score from 1 (low) to 10 (high)")
+    collapsed_from: Optional[str] = Field(None, description="Original state if this was collapsed")
+    collapse_reason: Optional[str] = Field(None, description="Reason for collapse if applicable")
+
+    model_config = ConfigDict(extra="allow")  # Extensible for future fields
+
+
+class RefinedStateSchema(BaseModel):
+    """
+    Output from re-analysis prompt (Pass 2+).
+    """
+    states: List[RefinedStateItem] = Field(..., description="List of refined/collapsed states")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PassSummary(BaseModel):
+    """
+    Summary of a single analysis pass.
+    """
+    pass_number: int = Field(..., description="Pass number (1, 2, ...)")
+    num_states: int = Field(..., description="Number of unique states in this pass")
+    num_collapsed: int = Field(0, description="Number of states collapsed in this pass")
+    summary_text: str = Field(..., description="Text summary of this pass")
+    state_counts: Dict[str, int] = Field(default_factory=dict, description="State occurrence counts")
+
+    model_config = ConfigDict(extra="allow")
+
+
+# =============================================================================
+# AUDIT SCHEMA
+# =============================================================================
 
 class AuditSchema(BaseModel):
     """

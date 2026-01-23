@@ -9,8 +9,12 @@ from gum import gum
 
 from gum.observers.retro import Retro
 
-from gum.config import CACHE_DIR
-from gum.config import RETRO_IMAGES_DIR
+from gum.config import (
+    CACHE_DIR,
+    RETRO_IMAGES_DIR,
+    DEFAULT_NUM_PASSES,
+    DEFAULT_CONTEXT_WINDOW_SIZE
+)
 
 class QueryAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -43,8 +47,20 @@ def parse_args():
     # Batching configuration arguments
     parser.add_argument('--min-batch-size', type=int, help='Minimum number of observations to trigger batch processing')
     parser.add_argument('--max-batch-size', type=int, help='Maximum number of observations per batch')
-    
-    #TODO: add retroactive observer flag
+
+    # Multi-pass configuration arguments
+    parser.add_argument(
+        '--num-passes', '-p',
+        type=int,
+        default=None,
+        help=f'Number of analysis passes (default: {DEFAULT_NUM_PASSES})'
+    )
+    parser.add_argument(
+        '--context-window-size', '-c',
+        type=int,
+        default=None,
+        help=f'Max unique states in context window for re-analysis (default: {DEFAULT_CONTEXT_WINDOW_SIZE})'
+    )
 
     args = parser.parse_args()
 
@@ -108,20 +124,30 @@ async def main():
             print(f"Relevance Score: {score:.2f}")
             print("-" * 80)
     else:
-        print(f"Listening to {user_name} with model {model}")
+        # Multi-pass configuration
+        num_passes = args.num_passes or int(os.getenv('GUM_NUM_PASSES', str(DEFAULT_NUM_PASSES)))
+        context_window_size = args.context_window_size or int(os.getenv('GUM_CONTEXT_WINDOW_SIZE', str(DEFAULT_CONTEXT_WINDOW_SIZE)))
 
-        retro_observer = Retro(model_name=model, debug=True, images_dir=RETRO_IMAGES_DIR)
+        print(f"Listening to {user_name} with model {model}")
+        print(f"Multi-pass: {num_passes} passes, context window: {context_window_size}")
+
+        retro_observer = Retro(
+            model_name=model,
+            debug=True,
+            images_dir=RETRO_IMAGES_DIR,
+            num_passes=num_passes,
+            context_window_size=context_window_size
+        )
 
         async with gum(
                 user_name,
                 model,
-                retro_observer, 
+                retro_observer,
                 min_batch_size=min_batch_size,
                 max_batch_size=max_batch_size
         ) as gum_instance:
             try:
-                #await asyncio.Future()  # run forever (Ctrl-C to stop)
-                await retro_observer.stopped.wait() 
+                await retro_observer.stopped.wait()
             except Exception:
                 print("Retro observer failed to loop until done")
 
