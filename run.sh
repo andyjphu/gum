@@ -28,6 +28,8 @@ curl -d "gum finished on grace" ntfy.sh/andy-phu-jobs
 # show logs
 # nohup sh -c './run.sh 2>&1 | tail -n 1000 > gum.log' &
 
+# nohup ./run.sh > fsm.log 2>&1 & echo $! > gum.pid
+
 
 # kill with pkill -f "gum --user-name"
 # ps aux | grep -v grep | grep gum

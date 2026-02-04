@@ -116,3 +116,7 @@ dmypy.json
 cython_debug/ 
 
 util/data.json
+
+*.pid
+*.log
+*.out
