@@ -198,7 +198,7 @@ class Retro(Observer):
         """
         suffix = self._get_pass_suffix()
         pass_type = self._get_pass_type_str()
-        video_folder = video_name or "root"
+        video_folder = video_name or ""
         output_folder = self.output_dir / video_folder
 
         img_path = state_data.get("image_path", "")
@@ -220,7 +220,7 @@ class Retro(Observer):
         """
         suffix = self._get_pass_suffix()
         pass_type = self._get_pass_type_str()
-        video_folder = video_name or "root"
+        video_folder = video_name or ""
         output_folder = self.output_dir / video_folder
 
         sub_dir = output_folder / data_type
@@ -243,7 +243,7 @@ class Retro(Observer):
 
         Aggregates all passes for that frame with log paths for auditability.
         """
-        video_folder = video_name or "root"
+        video_folder = video_name or ""
         output_folder = self.output_dir / video_folder
         log_base = TRAFFIC_LOG_DIR / video_folder
 
@@ -822,7 +822,7 @@ class Retro(Observer):
 
     def _save_metrics_and_viz(self, video_name: Optional[str]) -> None:
         """Compute and save metrics and visualization data after all passes."""
-        video_folder = video_name or "root"
+        video_folder = video_name or ""
         output_folder = self.output_dir / video_folder
         output_folder.mkdir(parents=True, exist_ok=True)
 
