@@ -294,7 +294,7 @@ class Retro(Observer):
             primitive_passes = [p for p in passes_data.keys() if passes_data[p]["type"] == "primitive"]
             final_pass = max(primitive_passes) if primitive_passes else max(passes_data.keys())
             final_state = passes_data[final_pass]["state"]
-            final_concurrent = passes_data[final_pass].get("concurrent", [])
+            final_concurrent = [c for c in passes_data[final_pass].get("concurrent", []) if c]
 
             # Determine transition from previous frame
             transition = None
@@ -305,7 +305,7 @@ class Retro(Observer):
                 if prev_primitive_passes:
                     prev_final_pass = max(prev_primitive_passes)
                     prev_state = prev_passes[prev_final_pass]["state"]
-                    prev_concurrent = prev_passes[prev_final_pass].get("concurrent", [])
+                    prev_concurrent = [c for c in prev_passes[prev_final_pass].get("concurrent", []) if c]
                     # Transition fires when the state-set changes (primary + concurrent)
                     curr_set = frozenset([final_state] + final_concurrent)
                     prev_set = frozenset([prev_state] + prev_concurrent)

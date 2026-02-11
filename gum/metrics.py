@@ -72,6 +72,16 @@ def compute_primitive_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
             all_objects.extend(objs)
     object_freq = Counter(all_objects)
 
+    # Concurrent state metrics
+    all_concurrent = []
+    frames_with_concurrent = 0
+    for s in states:
+        conc = [c for c in s.get("concurrent_states", []) if c]
+        if conc:
+            frames_with_concurrent += 1
+            all_concurrent.extend(conc)
+    concurrent_freq = Counter(all_concurrent)
+
     return {
         "total_frames": total,
         "unique_primitives": len(freq),
@@ -85,6 +95,10 @@ def compute_primitive_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
         "body_position_frequency": dict(body_freq.most_common()),
         "object_frequency": dict(object_freq.most_common(20)),
         "top_primitives": freq.most_common(10),
+        "frames_with_concurrent": frames_with_concurrent,
+        "concurrent_ratio": round(frames_with_concurrent / total, 3) if total > 0 else 0,
+        "unique_concurrent": len(concurrent_freq),
+        "concurrent_frequency": dict(concurrent_freq.most_common(10)),
     }
 
 
@@ -103,21 +117,28 @@ def compute_primitive_transitions(states: List[Dict[str, Any]]) -> Dict[str, Any
 
     primitives = [s.get("primitive_state", "unknown") for s in states]
 
-    # Build transition counts
+    # Build state-sets (primary + concurrent) for accurate transition detection
+    state_sets = [
+        frozenset([s.get("primitive_state", "unknown")] + [c for c in s.get("concurrent_states", []) if c])
+        for s in states
+    ]
+
+    # Build transition counts (using primary state labels for readability)
     transitions: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    for i in range(len(primitives) - 1):
-        from_state = primitives[i]
-        to_state = primitives[i + 1]
-        transitions[from_state][to_state] += 1
+    for i in range(len(state_sets) - 1):
+        if state_sets[i] != state_sets[i + 1]:
+            from_state = primitives[i]
+            to_state = primitives[i + 1]
+            transitions[from_state][to_state] += 1
 
     # Convert to regular dict for JSON serialization
     transition_matrix = {k: dict(v) for k, v in transitions.items()}
 
-    # Compute self-transition rate (staying in same state)
+    # Compute self-transition rate (same full state-set between frames)
     self_transitions = sum(
-        transitions[s][s] for s in transitions if s in transitions[s]
+        1 for i in range(len(state_sets) - 1) if state_sets[i] == state_sets[i + 1]
     )
-    total_transitions = len(primitives) - 1
+    total_transitions = len(state_sets) - 1
     self_transition_rate = self_transitions / total_transitions if total_transitions > 0 else 0
 
     # Most common transitions
@@ -195,6 +216,16 @@ def compute_intent_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
             supporting_counts.append(len(supporting))
     avg_supporting = sum(supporting_counts) / len(supporting_counts) if supporting_counts else 0
 
+    # Concurrent intent metrics
+    all_concurrent = []
+    frames_with_concurrent = 0
+    for s in states:
+        conc = [c for c in s.get("concurrent_intents", []) if c]
+        if conc:
+            frames_with_concurrent += 1
+            all_concurrent.extend(conc)
+    concurrent_freq = Counter(all_concurrent)
+
     return {
         "total_frames": total,
         "unique_intents": len(freq),
@@ -209,6 +240,10 @@ def compute_intent_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
         "ambiguity_rate": round(ambiguity_rate, 3),
         "avg_supporting_primitives": round(avg_supporting, 2),
         "top_intents": freq.most_common(10),
+        "frames_with_concurrent": frames_with_concurrent,
+        "concurrent_ratio": round(frames_with_concurrent / total, 3) if total > 0 else 0,
+        "unique_concurrent": len(concurrent_freq),
+        "concurrent_frequency": dict(concurrent_freq.most_common(10)),
     }
 
 
@@ -254,40 +289,68 @@ def compute_pass_convergence(
         is_primitive = curr_pass % 2 == 1
 
         if is_primitive:
-            # Compare primitives
+            # Compare primitives (full state-sets: primary + concurrent)
             prev_prims = [s.get("primitive_state", "unknown") for s in prev_states if "primitive_state" in s]
             curr_prims = [s.get("primitive_state", "unknown") for s in curr_states]
+            prev_sets = [
+                frozenset([s.get("primitive_state", "unknown")] + [c for c in s.get("concurrent_states", []) if c])
+                for s in prev_states if "primitive_state" in s
+            ]
+            curr_sets = [
+                frozenset([s.get("primitive_state", "unknown")] + [c for c in s.get("concurrent_states", []) if c])
+                for s in curr_states
+            ]
 
-            if prev_prims and curr_prims and len(prev_prims) == len(curr_prims):
-                matches = sum(1 for p, c in zip(prev_prims, curr_prims) if p == c)
-                stability = matches / len(curr_prims)
+            if prev_sets and curr_sets and len(prev_sets) == len(curr_sets):
+                matches = sum(1 for p, c in zip(prev_sets, curr_sets) if p == c)
+                stability = matches / len(curr_sets)
                 metrics["primitive_stability"].append({
                     "from_pass": prev_pass,
                     "to_pass": curr_pass,
                     "stability": round(stability, 3)
                 })
 
+            # Unique count includes concurrent vocabulary
+            all_vocab = set(curr_prims)
+            for s in curr_states:
+                for c in s.get("concurrent_states", []):
+                    if c:
+                        all_vocab.add(c)
             metrics["unique_count_trend"]["primitives"].append({
                 "pass": curr_pass,
-                "unique_count": len(set(curr_prims))
+                "unique_count": len(all_vocab)
             })
         else:
-            # Compare intents
+            # Compare intents (full state-sets: primary + concurrent)
             prev_intents = [s.get("hidden_intent", "unknown") for s in prev_states if "hidden_intent" in s]
             curr_intents = [s.get("hidden_intent", "unknown") for s in curr_states]
+            prev_sets = [
+                frozenset([s.get("hidden_intent", "unknown")] + [c for c in s.get("concurrent_intents", []) if c])
+                for s in prev_states if "hidden_intent" in s
+            ]
+            curr_sets = [
+                frozenset([s.get("hidden_intent", "unknown")] + [c for c in s.get("concurrent_intents", []) if c])
+                for s in curr_states
+            ]
 
-            if prev_intents and curr_intents and len(prev_intents) == len(curr_intents):
-                matches = sum(1 for p, c in zip(prev_intents, curr_intents) if p == c)
-                stability = matches / len(curr_intents)
+            if prev_sets and curr_sets and len(prev_sets) == len(curr_sets):
+                matches = sum(1 for p, c in zip(prev_sets, curr_sets) if p == c)
+                stability = matches / len(curr_sets)
                 metrics["intent_stability"].append({
                     "from_pass": prev_pass,
                     "to_pass": curr_pass,
                     "stability": round(stability, 3)
                 })
 
+            # Unique count includes concurrent vocabulary
+            all_vocab = set(curr_intents)
+            for s in curr_states:
+                for c in s.get("concurrent_intents", []):
+                    if c:
+                        all_vocab.add(c)
             metrics["unique_count_trend"]["intents"].append({
                 "pass": curr_pass,
-                "unique_count": len(set(curr_intents))
+                "unique_count": len(all_vocab)
             })
 
     # Compute overall convergence score
@@ -323,7 +386,7 @@ def compute_primitive_intent_alignment(
     if total == 0:
         return {"error": "No states provided"}
 
-    # Build primitive-to-intent mapping
+    # Build primitive-to-intent mapping (including concurrent)
     prim_to_intents: Dict[str, List[str]] = defaultdict(list)
     intent_to_prims: Dict[str, List[str]] = defaultdict(list)
 
@@ -332,6 +395,14 @@ def compute_primitive_intent_alignment(
         intent = intent_s.get("hidden_intent", "unknown")
         prim_to_intents[prim].append(intent)
         intent_to_prims[intent].append(prim)
+        # Also map concurrent primitives to the intent
+        for conc_prim in prim_s.get("concurrent_states", []):
+            if conc_prim:
+                prim_to_intents[conc_prim].append(intent)
+        # Also map concurrent intents back to the primitive
+        for conc_intent in intent_s.get("concurrent_intents", []):
+            if conc_intent:
+                intent_to_prims[conc_intent].append(prim)
 
     # Compute primitive-intent consistency
     # (Do similar primitives map to similar intents?)
@@ -479,7 +550,7 @@ def export_for_visualization(
 
         for idx, state in enumerate(states):
             if pass_type == "primitive":
-                viz_data["timeline"].append({
+                entry = {
                     "frame": idx,
                     "pass": pass_num,
                     "type": "primitive",
@@ -487,9 +558,13 @@ def export_for_visualization(
                     "confidence": state.get("confidence", 5),
                     "body_position": state.get("body_position"),
                     "objects": state.get("objects_interacted", []),
-                })
+                }
+                concurrent = [c for c in state.get("concurrent_states", []) if c]
+                if concurrent:
+                    entry["concurrent_states"] = concurrent
+                viz_data["timeline"].append(entry)
             else:
-                viz_data["timeline"].append({
+                entry = {
                     "frame": idx,
                     "pass": pass_num,
                     "type": "intent",
@@ -497,27 +572,42 @@ def export_for_visualization(
                     "confidence": state.get("intent_confidence", 5),
                     "supporting": state.get("supporting_primitives", []),
                     "alternatives": state.get("alternative_intents", []),
-                })
+                }
+                concurrent = [c for c in state.get("concurrent_intents", []) if c]
+                if concurrent:
+                    entry["concurrent_intents"] = concurrent
+                viz_data["timeline"].append(entry)
 
-    # Build Sankey diagram data for transitions
+    # Build Sankey diagram data for transitions (using state-sets)
     # Use the latest primitive pass
     primitive_passes = [p for p in all_pass_states.keys() if p % 2 == 1]
     if primitive_passes:
         latest_prim = max(primitive_passes)
         states = all_pass_states[latest_prim]
 
-        # Build nodes (unique states)
-        unique_states = list(set(s.get("primitive_state", "unknown") for s in states))
+        # Build nodes (unique states including concurrent)
+        all_state_names = set()
+        for s in states:
+            all_state_names.add(s.get("primitive_state", "unknown"))
+            for c in s.get("concurrent_states", []):
+                if c:
+                    all_state_names.add(c)
+        unique_states = sorted(all_state_names)
         viz_data["sankey"]["nodes"] = [{"name": s} for s in unique_states]
 
-        # Build links (transitions)
+        # Build links (transitions using state-sets for detection, primary labels for display)
         state_to_idx = {s: i for i, s in enumerate(unique_states)}
         transitions: Dict[Tuple[int, int], int] = defaultdict(int)
+        state_sets = [
+            frozenset([s.get("primitive_state", "unknown")] + [c for c in s.get("concurrent_states", []) if c])
+            for s in states
+        ]
 
-        for i in range(len(states) - 1):
-            from_s = states[i].get("primitive_state", "unknown")
-            to_s = states[i + 1].get("primitive_state", "unknown")
-            transitions[(state_to_idx[from_s], state_to_idx[to_s])] += 1
+        for i in range(len(state_sets) - 1):
+            if state_sets[i] != state_sets[i + 1]:
+                from_s = states[i].get("primitive_state", "unknown")
+                to_s = states[i + 1].get("primitive_state", "unknown")
+                transitions[(state_to_idx[from_s], state_to_idx[to_s])] += 1
 
         viz_data["sankey"]["links"] = [
             {"source": src, "target": tgt, "value": count}

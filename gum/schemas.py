@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from typing import List, Optional, Literal, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 # =============================================================================
 # STATE EXTRACTION SCHEMAS (for egocentric footage)
@@ -21,7 +21,7 @@ class PrimitiveStateSchema(BaseModel):
         ...,
         description="Observable action (e.g., 'walking', 'typing', 'pointing_at_screen')"
     )
-    concurrent_states: Optional[List[str]] = Field(
+    concurrent_states: List[str] = Field(
         default_factory=list,
         description="Additional simultaneous actions if the user is doing multiple things at once (e.g., ['listening_to_music', 'drinking_coffee']). Empty if only one activity."
     )
@@ -35,6 +35,13 @@ class PrimitiveStateSchema(BaseModel):
     )
     confidence: int = Field(..., ge=1, le=10, description="Confidence score from 1 (low) to 10 (high)")
 
+    @field_validator('concurrent_states', mode='before')
+    @classmethod
+    def clean_concurrent_states(cls, v):
+        if not v:
+            return []
+        return list(dict.fromkeys(s for s in v if s and isinstance(s, str) and s.strip()))
+
     model_config = ConfigDict(extra="allow")
 
 
@@ -47,7 +54,7 @@ class HiddenIntentSchema(BaseModel):
         ...,
         description="Inferred intent/goal (e.g., 'commuting_to_work', 'preparing_meal_for_family')"
     )
-    concurrent_intents: Optional[List[str]] = Field(
+    concurrent_intents: List[str] = Field(
         default_factory=list,
         description="Additional simultaneous intents if the user has multiple goals at once (e.g., ['staying_informed', 'relaxing']). Empty if only one intent."
     )
@@ -64,6 +71,13 @@ class HiddenIntentSchema(BaseModel):
         description="Other possible intents if ambiguous"
     )
 
+    @field_validator('concurrent_intents', mode='before')
+    @classmethod
+    def clean_concurrent_intents(cls, v):
+        if not v:
+            return []
+        return list(dict.fromkeys(s for s in v if s and isinstance(s, str) and s.strip()))
+
     model_config = ConfigDict(extra="allow")
 
 
@@ -76,7 +90,7 @@ class RefinedPrimitiveSchema(BaseModel):
         ...,
         description="Refined observable action"
     )
-    concurrent_states: Optional[List[str]] = Field(
+    concurrent_states: List[str] = Field(
         default_factory=list,
         description="Additional simultaneous actions if the user is doing multiple things at once. Empty if only one activity."
     )
@@ -96,6 +110,13 @@ class RefinedPrimitiveSchema(BaseModel):
         description="Hidden intent that informed this refinement"
     )
 
+    @field_validator('concurrent_states', mode='before')
+    @classmethod
+    def clean_concurrent_states(cls, v):
+        if not v:
+            return []
+        return list(dict.fromkeys(s for s in v if s and isinstance(s, str) and s.strip()))
+
     model_config = ConfigDict(extra="allow")
 
 
@@ -105,7 +126,7 @@ class RefinedIntentSchema(BaseModel):
     Refines intents with broader context.
     """
     hidden_intent: str = Field(..., description="Refined inferred intent/goal")
-    concurrent_intents: Optional[List[str]] = Field(
+    concurrent_intents: List[str] = Field(
         default_factory=list,
         description="Additional simultaneous intents if the user has multiple goals at once. Empty if only one intent."
     )
@@ -121,6 +142,13 @@ class RefinedIntentSchema(BaseModel):
         None,
         description="Whether subsequent frames validated or invalidated this intent"
     )
+
+    @field_validator('concurrent_intents', mode='before')
+    @classmethod
+    def clean_concurrent_intents(cls, v):
+        if not v:
+            return []
+        return list(dict.fromkeys(s for s in v if s and isinstance(s, str) and s.strip()))
 
     model_config = ConfigDict(extra="allow")
 
