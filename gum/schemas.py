@@ -21,6 +21,10 @@ class PrimitiveStateSchema(BaseModel):
         ...,
         description="Observable action (e.g., 'walking', 'typing', 'pointing_at_screen')"
     )
+    concurrent_states: Optional[List[str]] = Field(
+        default_factory=list,
+        description="Additional simultaneous actions if the user is doing multiple things at once (e.g., ['listening_to_music', 'drinking_coffee']). Empty if only one activity."
+    )
     body_position: Optional[str] = Field(
         None,
         description="Body posture/position if observable (e.g., 'standing', 'sitting', 'leaning')"
@@ -42,6 +46,10 @@ class HiddenIntentSchema(BaseModel):
     hidden_intent: str = Field(
         ...,
         description="Inferred intent/goal (e.g., 'commuting_to_work', 'preparing_meal_for_family')"
+    )
+    concurrent_intents: Optional[List[str]] = Field(
+        default_factory=list,
+        description="Additional simultaneous intents if the user has multiple goals at once (e.g., ['staying_informed', 'relaxing']). Empty if only one intent."
     )
     supporting_primitives: List[str] = Field(
         default_factory=list,
@@ -68,6 +76,10 @@ class RefinedPrimitiveSchema(BaseModel):
         ...,
         description="Refined observable action"
     )
+    concurrent_states: Optional[List[str]] = Field(
+        default_factory=list,
+        description="Additional simultaneous actions if the user is doing multiple things at once. Empty if only one activity."
+    )
     body_position: Optional[str] = Field(None, description="Body posture/position")
     objects_interacted: Optional[List[str]] = Field(default_factory=list)
     confidence: int = Field(..., ge=1, le=10)
@@ -93,6 +105,10 @@ class RefinedIntentSchema(BaseModel):
     Refines intents with broader context.
     """
     hidden_intent: str = Field(..., description="Refined inferred intent/goal")
+    concurrent_intents: Optional[List[str]] = Field(
+        default_factory=list,
+        description="Additional simultaneous intents if the user has multiple goals at once. Empty if only one intent."
+    )
     supporting_primitives: List[str] = Field(default_factory=list)
     intent_confidence: int = Field(..., ge=1, le=10)
     alternative_intents: Optional[List[str]] = Field(default_factory=list)

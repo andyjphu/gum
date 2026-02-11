@@ -260,9 +260,16 @@ class Retro(Observer):
                 ts = m.group(1)
                 if ts not in timestamps:
                     timestamps[ts] = {}
+                # Collect concurrent states/intents depending on pass type
+                if pass_type == "primitive":
+                    concurrent = state_data.get("concurrent_states", [])
+                else:
+                    concurrent = state_data.get("concurrent_intents", [])
+
                 timestamps[ts][pass_num] = {
                     "type": pass_type,
                     "state": state_data.get("primitive_state") or state_data.get("hidden_intent", "unknown"),
+                    "concurrent": concurrent,
                     "confidence": state_data.get("confidence") or state_data.get("intent_confidence", 0),
                     "body_position": state_data.get("body_position"),
                     "objects": state_data.get("objects_interacted", []),
@@ -287,6 +294,7 @@ class Retro(Observer):
             primitive_passes = [p for p in passes_data.keys() if passes_data[p]["type"] == "primitive"]
             final_pass = max(primitive_passes) if primitive_passes else max(passes_data.keys())
             final_state = passes_data[final_pass]["state"]
+            final_concurrent = passes_data[final_pass].get("concurrent", [])
 
             # Determine transition from previous frame
             transition = None
@@ -297,14 +305,20 @@ class Retro(Observer):
                 if prev_primitive_passes:
                     prev_final_pass = max(prev_primitive_passes)
                     prev_state = prev_passes[prev_final_pass]["state"]
-                    if prev_state != final_state:
+                    prev_concurrent = prev_passes[prev_final_pass].get("concurrent", [])
+                    # Transition fires when the state-set changes (primary + concurrent)
+                    curr_set = frozenset([final_state] + final_concurrent)
+                    prev_set = frozenset([prev_state] + prev_concurrent)
+                    if curr_set != prev_set:
                         # Get intent from current frame's highest intent pass as trigger
                         intent_passes = [p for p in passes_data.keys() if passes_data[p]["type"] == "intent"]
                         trigger = passes_data[max(intent_passes)]["state"] if intent_passes else f"to_{final_state}"
                         # Compute relative timestamp (5 seconds per frame)
                         transition = {
                             "source": prev_state,
+                            "source_concurrent": prev_concurrent,
                             "dest": final_state,
+                            "dest_concurrent": final_concurrent,
                             "trigger": trigger,
                             "timestamp": i * 5.0,
                         }
@@ -314,6 +328,7 @@ class Retro(Observer):
                 "image_path": passes_data[final_pass].get("image_path", ""),
                 "passes": {f"P{p}": data for p, data in sorted(passes_data.items())},
                 "final_state": final_state,
+                "final_concurrent_states": final_concurrent,
                 "final_confidence": passes_data[final_pass]["confidence"],
                 "transition_from_prev": transition,
             }
@@ -393,6 +408,7 @@ class Retro(Observer):
 
             return {
                 "primitive_state": parsed.get("primitive_state", "unknown"),
+                "concurrent_states": parsed.get("concurrent_states", []),
                 "body_position": parsed.get("body_position"),
                 "objects_interacted": parsed.get("objects_interacted", []),
                 "confidence": parsed.get("confidence", 5),
@@ -408,6 +424,7 @@ class Retro(Observer):
                 self.logger.error(traceback.format_exc())
             return {
                 "primitive_state": "extraction_failed",
+                "concurrent_states": [],
                 "confidence": 0,
                 "image_path": img_path,
                 "video_name": video_name,
@@ -456,6 +473,7 @@ class Retro(Observer):
 
             return {
                 "hidden_intent": parsed.get("hidden_intent", "unknown"),
+                "concurrent_intents": parsed.get("concurrent_intents", []),
                 "supporting_primitives": parsed.get("supporting_primitives", []),
                 "intent_confidence": parsed.get("intent_confidence", 5),
                 "alternative_intents": parsed.get("alternative_intents", []),
@@ -471,6 +489,7 @@ class Retro(Observer):
                 self.logger.error(traceback.format_exc())
             return {
                 "hidden_intent": "inference_failed",
+                "concurrent_intents": [],
                 "intent_confidence": 0,
                 "image_path": img_path,
                 "video_name": video_name,
@@ -515,6 +534,7 @@ class Retro(Observer):
 
             return {
                 "primitive_state": parsed.get("primitive_state", "unknown"),
+                "concurrent_states": parsed.get("concurrent_states", []),
                 "body_position": parsed.get("body_position"),
                 "objects_interacted": parsed.get("objects_interacted", []),
                 "confidence": parsed.get("confidence", 5),
@@ -533,6 +553,7 @@ class Retro(Observer):
                 self.logger.error(traceback.format_exc())
             return {
                 "primitive_state": "refinement_failed",
+                "concurrent_states": [],
                 "confidence": 0,
                 "image_path": img_path,
                 "video_name": video_name,
@@ -587,6 +608,7 @@ class Retro(Observer):
 
             return {
                 "hidden_intent": parsed.get("hidden_intent", "unknown"),
+                "concurrent_intents": parsed.get("concurrent_intents", []),
                 "supporting_primitives": parsed.get("supporting_primitives", []),
                 "intent_confidence": parsed.get("intent_confidence", 5),
                 "alternative_intents": parsed.get("alternative_intents", []),
@@ -605,6 +627,7 @@ class Retro(Observer):
                 self.logger.error(traceback.format_exc())
             return {
                 "hidden_intent": "refinement_failed",
+                "concurrent_intents": [],
                 "intent_confidence": 0,
                 "image_path": img_path,
                 "video_name": video_name,
@@ -627,10 +650,13 @@ class Retro(Observer):
             state_lines = []
             for s in states:
                 prim = s.get("primitive_state", "unknown")
+                concurrent = s.get("concurrent_states", [])
                 conf = s.get("confidence", "?")
                 body = s.get("body_position", "")
                 objs = s.get("objects_interacted", [])
                 line = f"- {prim} (confidence: {conf})"
+                if concurrent:
+                    line += f" + concurrent: [{', '.join(concurrent)}]"
                 if body:
                     line += f" [position: {body}]"
                 if objs:
@@ -650,9 +676,12 @@ class Retro(Observer):
             intent_lines = []
             for s in states:
                 intent = s.get("hidden_intent", "unknown")
+                concurrent = s.get("concurrent_intents", [])
                 conf = s.get("intent_confidence", "?")
                 supporting = s.get("supporting_primitives", [])
                 line = f"- {intent} (confidence: {conf})"
+                if concurrent:
+                    line += f" + concurrent: [{', '.join(concurrent)}]"
                 if supporting:
                     line += f" [supporting: {', '.join(supporting[:3])}...]"
                 intent_lines.append(line)
@@ -735,8 +764,11 @@ class Retro(Observer):
             # Pass 1 primitives and refined primitives generate propositions
             if pass_type == "primitive":
                 prim = state_data.get("primitive_state", "unknown")
+                concurrent = state_data.get("concurrent_states", [])
                 conf = state_data.get("confidence", 5)
                 content = f"[{video_name or 'video'}] Primitive: {prim} (confidence: {conf})"
+                if concurrent:
+                    content += f" + concurrent: [{', '.join(concurrent)}]"
 
                 # Include intent context if available from prior pass
                 if pass_num > 2:
@@ -746,6 +778,9 @@ class Retro(Observer):
                         prior_intent = self._pass_states[prior_intent_pass][idx].get("hidden_intent", "")
                         if prior_intent:
                             content += f" | Intent: {prior_intent}"
+                        prior_concurrent_intents = self._pass_states[prior_intent_pass][idx].get("concurrent_intents", [])
+                        if prior_concurrent_intents:
+                            content += f" + concurrent intents: [{', '.join(prior_concurrent_intents)}]"
 
                 await self.update_queue.put(
                     Update(content=content, content_type="input_text")

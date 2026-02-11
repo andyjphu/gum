@@ -22,8 +22,9 @@ Do NOT infer intent or purpose at this stage.
 
 Given the image(s), identify:
 1. The PRIMARY physical action (e.g., walking, typing, reaching, pointing)
-2. Body position if visible (standing, sitting, leaning, etc.)
-3. Objects being interacted with (phone, keyboard, door, etc.)
+2. Any CONCURRENT actions happening simultaneously (e.g., listening to music while typing)
+3. Body position if visible (standing, sitting, leaning, etc.)
+4. Objects being interacted with (phone, keyboard, door, etc.)
 
 Examples of primitive states:
 - "walking" (NOT "walking to the store")
@@ -32,15 +33,23 @@ Examples of primitive states:
 - "reaching_for_shelf" (NOT "getting groceries")
 - "looking_at_screen" (NOT "reading news")
 
+Examples of concurrent states (multiple simultaneous activities):
+- Primary: "typing_on_keyboard", Concurrent: ["listening_to_music", "drinking_coffee"]
+- Primary: "walking", Concurrent: ["talking_on_phone"]
+- Primary: "cooking_on_stove", Concurrent: ["watching_tv"]
+
 Guidelines:
 1. Use lowercase with underscores
 2. Describe WHAT is happening, not WHY
 3. Be specific about the action (e.g., "typing" vs "tapping" vs "swiping")
-4. If multiple actions, focus on the primary one
-5. If unclear, use "unclear" or "transitioning"
+4. The primary state should be the DOMINANT activity receiving the most attention
+5. List concurrent states ONLY for genuinely simultaneous activities visible in the frame — not sequential or speculative ones
+6. If only one activity is visible, leave concurrent_states as an empty list
+7. If unclear, use "unclear" or "transitioning"
 
 Output JSON with:
-- primitive_state: The observable action string
+- primitive_state: The dominant observable action string
+- concurrent_states: List of additional simultaneous actions (empty list if only one activity)
 - body_position: Body posture if visible (null if not visible)
 - objects_interacted: List of objects being interacted with (empty list if none)
 - confidence: 1-10 score (10 = clearly visible, 1 = obscured/uncertain)
@@ -67,15 +76,21 @@ Intent inference guidelines:
 1. Look for PATTERNS across multiple primitive states
 2. Consider the SEQUENCE of actions (what comes before/after)
 3. Think about common GOALS that would explain the observed actions
-4. Assign lower confidence to speculative intents
+4. If the frame has concurrent primitive states, consider whether they serve SEPARATE intents simultaneously
+5. Assign lower confidence to speculative intents
 
 Examples of intent inference:
 - Primitives: [walking, holding_bag, looking_at_list] → Intent: "grocery_shopping"
 - Primitives: [typing, looking_at_screen, drinking_coffee] → Intent: "working_on_computer_task"
 - Primitives: [walking, holding_phone, looking_around] → Intent: "navigating_to_destination"
 
+Examples of concurrent intents (from concurrent primitives):
+- Primitives: [typing_on_keyboard + listening_to_music] → Intent: "coding", Concurrent: ["relaxing_with_background_music"]
+- Primitives: [cooking_on_stove + watching_tv] → Intent: "preparing_meal", Concurrent: ["staying_entertained"]
+
 Output JSON with:
-- hidden_intent: The inferred goal/purpose (e.g., "commuting_to_work", "preparing_meal")
+- hidden_intent: The primary inferred goal/purpose (e.g., "commuting_to_work", "preparing_meal")
+- concurrent_intents: Additional simultaneous goals if the user has multiple purposes at once (empty list if only one intent)
 - supporting_primitives: List of primitive states that support this inference
 - intent_confidence: 1-10 (1=highly speculative, 10=near certain)
 - alternative_intents: Other possible intents if ambiguous (can be empty)
@@ -108,9 +123,13 @@ Refinement guidelines:
    - "strolling", "walking_slowly", "ambling" → "walking"
 3. Split primitives that serve different intents
    - "looking_at_phone" for navigation vs entertainment should remain distinct if intent differs
+4. Refine concurrent states: add, remove, or relabel concurrent activities based on enriched context
+   - If prior passes missed a concurrent action now supported by intent, add it
+   - If a concurrent state was speculative and context disproves it, remove it
 
 Output JSON with:
 - primitive_state: Refined observable action
+- concurrent_states: Refined list of additional simultaneous actions (empty list if only one activity)
 - body_position: Body posture if visible
 - objects_interacted: List of objects
 - confidence: 1-10 score
@@ -149,9 +168,13 @@ Refinement guidelines:
    - Prior intent "going_to_work" + later "entering_gym" → revise to "going_to_gym"
 3. ELEVATE: Discover higher-level patterns
    - Sequence of [grocery_shopping, cooking, eating] → "preparing_and_having_meal"
+4. Refine concurrent intents: if concurrent primitives reveal multiple simultaneous goals, include them
+   - If prior passes missed a concurrent intent now supported by evidence, add it
+   - If a concurrent intent was speculative and later context disproves it, remove it
 
 Output JSON with:
 - hidden_intent: Refined inferred intent
+- concurrent_intents: Refined list of additional simultaneous goals (empty list if only one intent)
 - supporting_primitives: Primitives supporting this inference
 - intent_confidence: 1-10 score
 - alternative_intents: Other possible intents
@@ -373,11 +396,19 @@ def build_temporal_context(
             if pass_type == "primitive":
                 state_str = state.get("primitive_state", state.get("state", "unknown"))
                 conf = state.get("confidence", "?")
-                lines.append(f"  [{frame_idx}] (Δ{distance}) {state_str} (conf: {conf})")
+                concurrent = state.get("concurrent_states", [])
+                line = f"  [{frame_idx}] (Δ{distance}) {state_str} (conf: {conf})"
+                if concurrent:
+                    line += f" + concurrent: [{', '.join(concurrent)}]"
+                lines.append(line)
             else:
                 intent = state.get("hidden_intent", "unknown")
                 conf = state.get("intent_confidence", state.get("confidence", "?"))
-                lines.append(f"  [{frame_idx}] (Δ{distance}) Intent: {intent} (conf: {conf})")
+                concurrent = state.get("concurrent_intents", [])
+                line = f"  [{frame_idx}] (Δ{distance}) Intent: {intent} (conf: {conf})"
+                if concurrent:
+                    line += f" + concurrent: [{', '.join(concurrent)}]"
+                lines.append(line)
 
     return "\n".join(lines) if lines else "No temporal context available."
 
