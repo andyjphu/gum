@@ -558,10 +558,8 @@ def export_for_visualization(
                     "confidence": state.get("confidence", 5),
                     "body_position": state.get("body_position"),
                     "objects": state.get("objects_interacted", []),
+                    "concurrent_states": [c for c in state.get("concurrent_states", []) if c],
                 }
-                concurrent = [c for c in state.get("concurrent_states", []) if c]
-                if concurrent:
-                    entry["concurrent_states"] = concurrent
                 viz_data["timeline"].append(entry)
             else:
                 entry = {
@@ -572,10 +570,8 @@ def export_for_visualization(
                     "confidence": state.get("intent_confidence", 5),
                     "supporting": state.get("supporting_primitives", []),
                     "alternatives": state.get("alternative_intents", []),
+                    "concurrent_intents": [c for c in state.get("concurrent_intents", []) if c],
                 }
-                concurrent = [c for c in state.get("concurrent_intents", []) if c]
-                if concurrent:
-                    entry["concurrent_intents"] = concurrent
                 viz_data["timeline"].append(entry)
 
     # Build Sankey diagram data for transitions (using state-sets)
@@ -607,7 +603,9 @@ def export_for_visualization(
             if state_sets[i] != state_sets[i + 1]:
                 from_s = states[i].get("primitive_state", "unknown")
                 to_s = states[i + 1].get("primitive_state", "unknown")
-                transitions[(state_to_idx[from_s], state_to_idx[to_s])] += 1
+                # Exclude concurrent-only self-loops from the Sankey
+                if from_s != to_s:
+                    transitions[(state_to_idx[from_s], state_to_idx[to_s])] += 1
 
         viz_data["sankey"]["links"] = [
             {"source": src, "target": tgt, "value": count}
