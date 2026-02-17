@@ -31,6 +31,7 @@ from ..schemas import (
     HiddenIntentSchema,
     RefinedPrimitiveSchema,
     RefinedIntentSchema,
+    GoalHypothesisSchema,
     get_schema,
 )
 from ..invoke import invoke
@@ -40,6 +41,10 @@ from ..config import (
     DEFAULT_TEMPORAL_WINDOW_SIZE,
     PASS_OUTPUT_DIR,
     TRAFFIC_LOG_DIR,
+)
+from gum.prompts.goal_prompt import (
+    GOAL_HYPOTHESIS_PROMPT,
+    build_goal_context,
 )
 from gum.prompts.state_prompt import (
     PRIMITIVE_STATE_PROMPT,
@@ -851,11 +856,14 @@ class Retro(Observer):
             self._save_provenance(video_name)
 
             # Compute and save metrics after all passes
-            self._save_metrics_and_viz(video_name)
+            metrics = self._save_metrics_and_viz(video_name)
+
+            # Generate goal hypotheses from aggregated data
+            await self._generate_goal_hypotheses(video_name, metrics)
 
     # ─────────────────────────────── Metrics and visualization
 
-    def _save_metrics_and_viz(self, video_name: Optional[str]) -> None:
+    def _save_metrics_and_viz(self, video_name: Optional[str]) -> Dict[str, Any]:
         """Compute and save metrics and visualization data after all passes."""
         video_folder = video_name or ""
         output_folder = self.output_dir / video_folder
@@ -888,6 +896,76 @@ class Retro(Observer):
             self.logger.info(
                 f"  Primitive-intent consistency: {metrics['alignment']['avg_primitive_consistency']}"
             )
+
+        return metrics
+
+    async def _generate_goal_hypotheses(
+        self,
+        video_name: Optional[str],
+        metrics: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """Generate high-level goal hypotheses after all passes complete.
+
+        Uses aggregated metrics, state frequencies, transition patterns,
+        and other signals to hypothesize 5 emergent user goals.
+
+        Args:
+            video_name: Name of the video being processed
+            metrics: Output of compute_all_metrics()
+
+        Returns:
+            Parsed goal hypotheses dict, or None on failure
+        """
+        self.logger.info("Generating goal hypotheses...")
+
+        # Build prompt context from metrics and pass data
+        context = build_goal_context(
+            all_pass_states=self._pass_states,
+            all_pass_summaries=self._pass_summaries,
+            metrics=metrics,
+            video_name=video_name or "",
+        )
+
+        prompt = GOAL_HYPOTHESIS_PROMPT.format(**context)
+
+        try:
+            result = await self._call_vision_api(
+                prompt=prompt,
+                img_paths=[],  # Text-only call
+                video_name=video_name,
+                response_format=get_schema(GoalHypothesisSchema.model_json_schema()),
+            )
+
+            parsed = json.loads(result)
+
+            # Save to output directory
+            video_folder = video_name or ""
+            output_folder = self.output_dir / video_folder
+            output_folder.mkdir(parents=True, exist_ok=True)
+            goals_path = output_folder / "goal_hypotheses.json"
+            with open(goals_path, "w") as f:
+                json.dump(parsed, f, indent=2)
+            self.logger.info(f"Saved goal hypotheses to {goals_path}")
+
+            # Log summary
+            goals = parsed.get("goals", [])
+            for i, g in enumerate(goals):
+                self.logger.info(
+                    f"  Goal {i+1}: {g.get('goal', '?')[:80]}... "
+                    f"(confidence: {g.get('confidence', '?')}, "
+                    f"novelty: {g.get('novelty', '?')})"
+                )
+            meta = parsed.get("meta_observation", "")
+            if meta:
+                self.logger.info(f"  Meta: {meta[:120]}")
+
+            return parsed
+
+        except Exception as exc:
+            self.logger.error(f"Goal hypothesis generation failed: {exc}")
+            if self.debug:
+                self.logger.error(traceback.format_exc())
+            return None
 
     # ─────────────────────────────── Main worker
 

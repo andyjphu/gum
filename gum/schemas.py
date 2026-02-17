@@ -153,6 +153,50 @@ class RefinedIntentSchema(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+# =============================================================================
+# GOAL HYPOTHESIS SCHEMAS (post-pass emergent goal inference)
+# =============================================================================
+
+class GoalHypothesisItem(BaseModel):
+    """A single high-level goal hypothesis about the user."""
+    goal: str = Field(
+        ...,
+        description="High-level emergent goal (e.g., 'learning_new_creative_tool_through_trial_and_error')"
+    )
+    reasoning: str = Field(
+        ...,
+        description="How observed primitives, intents, transitions, and patterns support this goal"
+    )
+    supporting_evidence: List[str] = Field(
+        default_factory=list,
+        description="Specific data points (e.g., 'typing_on_keyboard appeared 45 times')"
+    )
+    confidence: int = Field(
+        ..., ge=1, le=10,
+        description="Confidence in this goal hypothesis (1=highly speculative, 10=strongly supported)"
+    )
+    novelty: int = Field(
+        ..., ge=1, le=10,
+        description="How non-obvious or emergent this insight is (1=trivially obvious, 10=deeply emergent)"
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class GoalHypothesisSchema(BaseModel):
+    """Output schema for post-pass goal hypothesis generation."""
+    goals: List[GoalHypothesisItem] = Field(
+        ...,
+        description="Exactly 5 high-level goal hypotheses about the user, ordered by confidence"
+    )
+    meta_observation: str = Field(
+        ...,
+        description="A brief 1-2 sentence overall behavioral characterization"
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
 # Legacy schemas for backward compatibility
 class StateExtractionSchema(BaseModel):
     """
