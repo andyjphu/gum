@@ -649,23 +649,44 @@ class Retro(Observer):
         video_name: Optional[str],
         pass_type: str
     ) -> str:
-        """Generate summary based on pass type."""
+        """Generate summary based on pass type.
+
+        States are deduplicated by counting occurrences rather than listing
+        every frame, keeping the prompt within the model's context limit.
+        """
         if pass_type == "primitive":
-            # Format primitive states
-            state_lines = []
+            # Deduplicate: count occurrences per unique state
+            state_counts: Dict[str, Dict[str, Any]] = {}
             for s in states:
                 prim = s.get("primitive_state", "unknown")
-                concurrent = s.get("concurrent_states", [])
-                conf = s.get("confidence", "?")
-                body = s.get("body_position", "")
-                objs = s.get("objects_interacted", [])
-                line = f"- {prim} (confidence: {conf})"
-                if concurrent:
-                    line += f" + concurrent: [{', '.join(concurrent)}]"
-                if body:
-                    line += f" [position: {body}]"
-                if objs:
-                    line += f" [objects: {', '.join(objs)}]"
+                if prim not in state_counts:
+                    state_counts[prim] = {
+                        "count": 0,
+                        "concurrent": set(),
+                        "avg_conf": 0.0,
+                        "bodies": set(),
+                        "objects": set(),
+                    }
+                entry = state_counts[prim]
+                entry["count"] += 1
+                entry["avg_conf"] += float(s.get("confidence", 0))
+                for c in s.get("concurrent_states", []):
+                    entry["concurrent"].add(c)
+                if s.get("body_position"):
+                    entry["bodies"].add(s["body_position"])
+                for o in s.get("objects_interacted", []):
+                    entry["objects"].add(o)
+
+            state_lines = []
+            for prim, info in sorted(state_counts.items(), key=lambda x: -x[1]["count"]):
+                avg_conf = round(info["avg_conf"] / info["count"], 1)
+                line = f"- {prim} ({info['count']}x, avg confidence: {avg_conf})"
+                if info["concurrent"]:
+                    line += f" + concurrent: [{', '.join(sorted(info['concurrent']))}]"
+                if info["bodies"]:
+                    line += f" [positions: {', '.join(sorted(info['bodies']))}]"
+                if info["objects"]:
+                    line += f" [objects: {', '.join(sorted(info['objects']))}]"
                 state_lines.append(line)
 
             states_text = "\n".join(state_lines) if state_lines else "No primitives extracted"
@@ -677,18 +698,34 @@ class Retro(Observer):
             latest_primitive_pass = max(primitive_passes) if primitive_passes else None
             primitive_summary = self._pass_summaries.get(latest_primitive_pass, "No primitive summary") if latest_primitive_pass else "No primitive summary"
 
-            # Format intents
-            intent_lines = []
+            # Deduplicate: count occurrences per unique intent
+            intent_counts: Dict[str, Dict[str, Any]] = {}
             for s in states:
                 intent = s.get("hidden_intent", "unknown")
-                concurrent = s.get("concurrent_intents", [])
-                conf = s.get("intent_confidence", "?")
-                supporting = s.get("supporting_primitives", [])
-                line = f"- {intent} (confidence: {conf})"
-                if concurrent:
-                    line += f" + concurrent: [{', '.join(concurrent)}]"
-                if supporting:
-                    line += f" [supporting: {', '.join(supporting[:3])}...]"
+                if intent not in intent_counts:
+                    intent_counts[intent] = {
+                        "count": 0,
+                        "concurrent": set(),
+                        "avg_conf": 0.0,
+                        "supporting": set(),
+                    }
+                entry = intent_counts[intent]
+                entry["count"] += 1
+                entry["avg_conf"] += float(s.get("intent_confidence", 0))
+                for c in s.get("concurrent_intents", []):
+                    entry["concurrent"].add(c)
+                for sp in s.get("supporting_primitives", []):
+                    entry["supporting"].add(sp)
+
+            intent_lines = []
+            for intent, info in sorted(intent_counts.items(), key=lambda x: -x[1]["count"]):
+                avg_conf = round(info["avg_conf"] / info["count"], 1)
+                line = f"- {intent} ({info['count']}x, avg confidence: {avg_conf})"
+                if info["concurrent"]:
+                    line += f" + concurrent: [{', '.join(sorted(info['concurrent']))}]"
+                if info["supporting"]:
+                    top_supporting = sorted(info["supporting"])[:5]
+                    line += f" [supporting: {', '.join(top_supporting)}]"
                 intent_lines.append(line)
 
             intents_text = "\n".join(intent_lines) if intent_lines else "No intents inferred"

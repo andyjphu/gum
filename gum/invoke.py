@@ -2,11 +2,12 @@
 # Centralized VLLM server communications
 
 from typing import List, Dict, Any
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, BadRequestError
 from datetime import datetime, timezone
 from pathlib import Path
 import logging
 import os
+import urllib.request
 
 from .data import save_to_file, copy_imgs
 
@@ -15,6 +16,26 @@ logger.setLevel(logging.INFO)
 logger.propagate = False
 if not logger.handlers:
     logger.addHandler(logging.StreamHandler())
+
+
+_NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "")
+_GUM_MACHINE = os.environ.get("GUM_MACHINE", "")
+
+
+def _notify_error(msg: str) -> None:
+    """Send error notification via ntfy.sh (fire-and-forget)."""
+    if not _NTFY_TOPIC:
+        return
+    prefix = f"[{_GUM_MACHINE}] " if _GUM_MACHINE else ""
+    try:
+        req = urllib.request.Request(
+            f"https://ntfy.sh/{_NTFY_TOPIC}",
+            data=f"{prefix}{msg}".encode(),
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass
 
 
 def newest_img_timestamp(img_paths: List[str] | str | None) -> str:
@@ -69,14 +90,19 @@ async def invoke(
             copy_imgs(img_paths=img_list, subfolder=subfolder_path)
     logger.info(f"{ts} [INVOKE] {debug_tag} sent, img_paths: {debug_img_paths}")
     
-    response = await client.chat.completions.create(
-        model=model,
-        messages=messages,
-        response_format=response_format,
-        frequency_penalty=0.01,
-        temperature=0.1,
-        **kwargs,
-    )
+    try:
+        response = await client.chat.completions.create(
+            model=model,
+            messages=messages,
+            response_format=response_format,
+            frequency_penalty=0.01,
+            temperature=0.1,
+            **kwargs,
+        )
+    except BadRequestError as e:
+        video_label = f" {debug_path}" if debug_path else ""
+        _notify_error(f"400{video_label} {debug_tag}: {e.message}")
+        raise
     
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     
