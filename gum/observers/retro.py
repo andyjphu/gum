@@ -39,7 +39,10 @@ from ..config import (
     DEFAULT_NUM_PASSES,
     DEFAULT_CONTEXT_WINDOW_SIZE,
     DEFAULT_TEMPORAL_WINDOW_SIZE,
+    DEFAULT_META_SUMMARY_MAX_CHARS,
+    DEFAULT_PROMPT_TOKEN_THRESHOLD,
     PASS_OUTPUT_DIR,
+    SHARED_DIR,
     TRAFFIC_LOG_DIR,
 )
 from gum.prompts.goal_prompt import (
@@ -150,16 +153,24 @@ class Retro(Observer):
         self._pass_summaries: Dict[int, str] = {}  # pass_num -> summary text
         self._current_pass: int = 1
 
+        # Pass-level compaction: rolling meta-summary for dropped passes
+        self._meta_summary: str = ""
+        self._compacted_passes: set[int] = set()
+
         # Output directory
         self.output_dir = PASS_OUTPUT_DIR
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
+        self.logger = logging.getLogger("Retro")
+
         # OpenAI client
+        resolved_key = api_key or os.getenv("GUM_LM_API_KEY") or os.getenv("OPENAI_API_KEY")
+        if not resolved_key:
+            raise ValueError("API key not configured — set GUM_LM_API_KEY or OPENAI_API_KEY")
         self.client = AsyncOpenAI(
             base_url=api_base or os.getenv("VLLM_ENDPOINT"),
-            api_key=api_key or os.getenv("OPENAI_API_KEY") or "no-key",
+            api_key=resolved_key,
         )
-        self.logger = logging.getLogger("Retro")
 
         # To ensure gum stops when retro stops
         self.stopped = asyncio.Event()
@@ -195,6 +206,140 @@ class Retro(Observer):
     def _get_pass_type_str(self) -> str:
         """Get the current pass type as string."""
         return get_pass_type(self._current_pass)
+
+    async def _compact_dropped_summaries(
+        self, current_pass: int, video_name: Optional[str] = None
+    ) -> None:
+        """Compact summaries from passes that fell out of the sliding context window.
+
+        Uses map-reduce to condense dropped pass summaries without truncation.
+        """
+        context_passes = set(get_context_passes(current_pass))
+
+        # Collect summaries from passes that just dropped out
+        new_dropped: List[str] = []
+        for pass_num in sorted(self._pass_summaries.keys()):
+            if pass_num not in context_passes and pass_num not in self._compacted_passes:
+                summary = self._pass_summaries[pass_num]
+                new_dropped.append(f"[P{pass_num}] {summary}")
+                self._compacted_passes.add(pass_num)
+
+        if not new_dropped:
+            return
+
+        # Combine existing meta-summary with newly dropped summaries
+        combined = self._meta_summary + "\n".join(new_dropped)
+
+        # Map-reduce if combined text exceeds budget
+        max_meta_tokens = DEFAULT_META_SUMMARY_MAX_CHARS // 4
+        if len(combined) // 4 > max_meta_tokens:
+            combined = await self._map_reduce_summarize(
+                combined, max_meta_tokens, video_name,
+                "compacted pass history",
+            )
+
+        self._meta_summary = combined
+
+    def _check_prompt_overflow(
+        self,
+        prompt_text: str,
+        image_tokens: int,
+        video_name: Optional[str],
+        pass_num: int,
+        frame_id: str,
+    ) -> bool:
+        """Estimate prompt tokens; if over threshold, serialize to disk and return True."""
+        estimated_tokens = len(prompt_text) // 4 + image_tokens
+        if estimated_tokens <= DEFAULT_PROMPT_TOKEN_THRESHOLD:
+            return False
+
+        run_history_dir = SHARED_DIR / "run_history"
+        run_history_dir.mkdir(parents=True, exist_ok=True)
+        dump_path = run_history_dir / f"{video_name or 'unknown'}_P{pass_num}_{frame_id}.json"
+        dump_path.write_text(json.dumps({
+            "video": video_name,
+            "pass": pass_num,
+            "frame": frame_id,
+            "estimated_tokens": estimated_tokens,
+            "threshold": DEFAULT_PROMPT_TOKEN_THRESHOLD,
+            "prompt_text": prompt_text,
+        }, indent=2))
+        self.logger.warning(
+            f"Prompt overflow ({estimated_tokens} tokens > {DEFAULT_PROMPT_TOKEN_THRESHOLD}), "
+            f"dumped to {dump_path}"
+        )
+        return True
+
+    async def _map_reduce_summarize(
+        self,
+        text: str,
+        max_output_tokens: int,
+        video_name: Optional[str],
+        context_label: str,
+    ) -> str:
+        """Map-reduce summarization for text that exceeds the model's context budget.
+
+        Chunks the input text, generates a partial summary for each chunk via the
+        LLM, then merges partial summaries. Recurses if the merged result still
+        exceeds the budget.
+
+        Args:
+            text: Full text to summarize
+            max_output_tokens: Target token budget for the final output
+            video_name: For debug logging
+            context_label: Description of what's being summarized (for prompts)
+        """
+        estimated_tokens = len(text) // 4
+        if estimated_tokens <= max_output_tokens:
+            return text
+
+        # Chunk into pieces that fit comfortably in a single prompt
+        # Leave room for the summarization instruction (~200 tokens)
+        chunk_budget_chars = (DEFAULT_PROMPT_TOKEN_THRESHOLD - 200) * 4
+        chunks = []
+        for i in range(0, len(text), chunk_budget_chars):
+            chunk = text[i:i + chunk_budget_chars]
+            if chunk.strip():
+                chunks.append(chunk)
+
+        if not chunks:
+            return text
+
+        self.logger.info(
+            f"Map-reduce {context_label}: {estimated_tokens} tokens "
+            f"-> {len(chunks)} chunks"
+        )
+
+        # Map: summarize each chunk
+        partial_summaries = []
+        for idx, chunk in enumerate(chunks):
+            map_prompt = (
+                f"Summarize the following {context_label} concisely, preserving "
+                f"all distinct states/intents and their frequencies. Do not drop "
+                f"any entries — compress descriptions, not data.\n\n{chunk}"
+            )
+            try:
+                partial = await self._call_vision_api(
+                    prompt=map_prompt,
+                    img_paths=[],
+                    video_name=video_name,
+                )
+                partial_summaries.append(partial)
+            except Exception as exc:
+                self.logger.warning(f"Map step {idx} failed: {exc}")
+                partial_summaries.append(chunk[:500])
+
+        # Reduce: merge partial summaries
+        merged = "\n\n".join(partial_summaries)
+
+        # Recurse if still over budget
+        if len(merged) // 4 > max_output_tokens:
+            return await self._map_reduce_summarize(
+                merged, max_output_tokens, video_name,
+                f"{context_label} (reduce pass)"
+            )
+
+        return merged
 
     def _save_single_state(self, video_name: Optional[str], state_data: Dict[str, Any]) -> None:
         """Save a single state entry to its timestamp folder immediately.
@@ -401,6 +546,19 @@ class Retro(Observer):
         """Extract primitive (observable) state from a single image (Pass 1)."""
         prompt = PRIMITIVE_STATE_PROMPT.format(additional_fields="")
 
+        frame_id = Path(img_path).stem
+        if self._check_prompt_overflow(prompt, 3000, video_name, 1, frame_id):
+            return {
+                "primitive_state": "overflow_skipped",
+                "concurrent_states": [],
+                "confidence": 0,
+                "image_path": img_path,
+                "video_name": video_name,
+                "pass": self._current_pass,
+                "pass_type": "primitive",
+                "error": "prompt_overflow",
+            }
+
         try:
             result = await self._call_vision_api(
                 prompt=prompt,
@@ -466,6 +624,19 @@ class Retro(Observer):
             additional_fields=""
         )
 
+        frame_id = Path(img_path).stem
+        if self._check_prompt_overflow(prompt, 3000, video_name, self._current_pass, frame_id):
+            return {
+                "hidden_intent": "overflow_skipped",
+                "concurrent_intents": [],
+                "intent_confidence": 0,
+                "image_path": img_path,
+                "video_name": video_name,
+                "pass": self._current_pass,
+                "pass_type": "intent",
+                "error": "prompt_overflow",
+            }
+
         try:
             result = await self._call_vision_api(
                 prompt=prompt,
@@ -519,13 +690,27 @@ class Retro(Observer):
             self._pass_states,
             self._pass_summaries,
             context_passes,
-            self.context_window_size
+            self.context_window_size,
+            meta_summary=self._meta_summary,
         )
 
         prompt = REFINED_PRIMITIVE_PROMPT.format(
             prior_context=prior_context,
             additional_fields=""
         )
+
+        frame_id = Path(img_path).stem
+        if self._check_prompt_overflow(prompt, 3000, video_name, self._current_pass, frame_id):
+            return {
+                "primitive_state": "overflow_skipped",
+                "concurrent_states": [],
+                "confidence": 0,
+                "image_path": img_path,
+                "video_name": video_name,
+                "pass": self._current_pass,
+                "pass_type": "primitive",
+                "error": "prompt_overflow",
+            }
 
         try:
             result = await self._call_vision_api(
@@ -583,7 +768,8 @@ class Retro(Observer):
             self._pass_states,
             self._pass_summaries,
             context_passes,
-            self.context_window_size
+            self.context_window_size,
+            meta_summary=self._meta_summary,
         )
 
         temporal_context = build_temporal_context(
@@ -600,6 +786,19 @@ class Retro(Observer):
             temporal_context=temporal_context,
             additional_fields=""
         )
+
+        frame_id = Path(img_path).stem
+        if self._check_prompt_overflow(prompt, 3000, video_name, self._current_pass, frame_id):
+            return {
+                "hidden_intent": "overflow_skipped",
+                "concurrent_intents": [],
+                "intent_confidence": 0,
+                "image_path": img_path,
+                "video_name": video_name,
+                "pass": self._current_pass,
+                "pass_type": "intent",
+                "error": "prompt_overflow",
+            }
 
         try:
             result = await self._call_vision_api(
@@ -690,6 +889,16 @@ class Retro(Observer):
                 state_lines.append(line)
 
             states_text = "\n".join(state_lines) if state_lines else "No primitives extracted"
+
+            # Map-reduce if frequency table exceeds context budget
+            # Reserve ~2000 tokens for the prompt template + response
+            max_table_tokens = DEFAULT_PROMPT_TOKEN_THRESHOLD - 2000
+            if len(states_text) // 4 > max_table_tokens:
+                states_text = await self._map_reduce_summarize(
+                    states_text, max_table_tokens, video_name,
+                    "primitive state frequency table",
+                )
+
             prompt = PRIMITIVE_SUMMARY_PROMPT.format(states=states_text)
 
         else:  # intent
@@ -729,10 +938,21 @@ class Retro(Observer):
                 intent_lines.append(line)
 
             intents_text = "\n".join(intent_lines) if intent_lines else "No intents inferred"
+
+            # Map-reduce if frequency table exceeds context budget
+            max_table_tokens = DEFAULT_PROMPT_TOKEN_THRESHOLD - 2000
+            if len(intents_text) // 4 > max_table_tokens:
+                intents_text = await self._map_reduce_summarize(
+                    intents_text, max_table_tokens, video_name,
+                    "intent frequency table",
+                )
             prompt = INTENT_SUMMARY_PROMPT.format(
                 primitive_summary=primitive_summary,
                 intents=intents_text
             )
+
+        if self._check_prompt_overflow(prompt, 0, video_name, self._current_pass, "summary"):
+            return f"Summary skipped due to prompt overflow ({len(prompt)} chars)"
 
         try:
             summary = await self._call_vision_api(
@@ -851,6 +1071,8 @@ class Retro(Observer):
             # Clear pass state for this video
             self._pass_states.clear()
             self._pass_summaries.clear()
+            self._meta_summary = ""
+            self._compacted_passes.clear()
 
             # Run all passes for this video
             for pass_num in range(1, self.num_passes + 1):
@@ -870,6 +1092,10 @@ class Retro(Observer):
                 summary = await self._generate_summary(states, video_name, pass_type)
                 self._pass_summaries[pass_num] = summary
                 self._save_pass_output(video_name, "summary", {"summary": summary})
+
+                # Compact summaries that will be outside the next pass's context window
+                if pass_num < self.num_passes:
+                    await self._compact_dropped_summaries(pass_num + 1, video_name)
 
                 # Log pass statistics
                 if pass_type == "primitive":

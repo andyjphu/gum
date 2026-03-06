@@ -109,9 +109,12 @@ class gum:
         self.revise_prompt = revise_prompt or REVISE_PROMPT
         self.audit_prompt = audit_prompt or AUDIT_PROMPT
 
+        resolved_key = api_key or os.getenv("GUM_LM_API_KEY") or os.getenv("OPENAI_API_KEY")
+        if not resolved_key:
+            raise ValueError("API key not configured — set GUM_LM_API_KEY or OPENAI_API_KEY")
         self.client = AsyncOpenAI(
-            base_url=api_base or os.getenv("GUM_LM_API_BASE"),  #TODO: this is aconcerning on a standard basis
-            api_key=api_key or os.getenv("GUM_LM_API_KEY") or os.getenv("OPENAI_API_KEY") or "None"
+            base_url=api_base or os.getenv("GUM_LM_API_BASE"),
+            api_key=resolved_key,
         )
 
         self.engine = None
@@ -264,7 +267,6 @@ class gum:
                     )
                     session.add(observation)
                     observations.append(observation)
-#                print("DEBUG OBS:", session, observations) #TODO: handle observation logging via local better
                 await session.flush()
                 
                 # Process the combined content
@@ -304,14 +306,7 @@ class gum:
             .replace("{inputs}", update.content)
         )
         
-       # print("!DEBUG", prompt) TODO: modify
-
         schema = PropositionSchema.model_json_schema()
-        # rsp = await self.client.chat.completions.create(
-        #     model=self.model,
-        #     messages=[{"role": "user", "content": prompt}],
-        #     response_format=get_schema(schema),
-        # )
         rsp = await invoke(
             model = self.model, 
             messages= [{"role": "user", "content": prompt}], 
@@ -359,12 +354,6 @@ class gum:
             for p in rel_props
         ]
         prompt_text = await self._build_relation_prompt(payload)
-      #  print("!DEBUG2",prompt_text)
-        # rsp = await self.client.chat.completions.create(
-        #     model=self.model,
-        #     messages=[{"role": "user", "content": prompt_text}],
-        #     response_format=get_schema(RelationSchema.model_json_schema()),
-        # )
         rsp = await invoke(
             model=self.model,
             messages=[{"role": "user", "content": prompt_text}],
@@ -439,12 +428,6 @@ class gum:
         body = await self._build_revision_body(similar_cluster, related_obs)
         prompt = self.revise_prompt.replace("{body}", body)
 
-        # rsp = await self.client.chat.completions.create(
-        #     model=self.model,
-        #     messages=[{"role": "user", "content": prompt}],
-        #     response_format=get_schema(PropositionSchema.model_json_schema()), 
-        # )
-        
         rsp = await invoke(
             model = self.model, 
             messages=[{"role":"user","content":prompt}], 
@@ -592,14 +575,6 @@ class gum:
             .replace("{user_name}", self.user_name)
         )
 
-       # print("!DEBUG4", prompt)
-        # rsp = await self.client.chat.completions.create(
-        #     model=self.model,
-        #     messages=[{"role": "user", "content": prompt}],
-        #     response_format=get_schema(AuditSchema.model_json_schema()),
-        #     temperature=0.0,
-        # )
-        
         rsp = await invoke(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
@@ -631,7 +606,6 @@ class gum:
             content=update.content,
             content_type=update.content_type
         )
-        #print("\nDEBUG 8 OBS: ", observation_id, update.content, update.content_type)
         self.logger.info(f"Added observation {observation_id} to queue (size: {self.batcher.size()})")
 
     @asynccontextmanager
@@ -647,8 +621,7 @@ class gum:
             .prefix_with("OR IGNORE")
             .values(observation_id=obs.id, proposition_id=prop.id)
         )
-        # prop.updated_at = datetime.now(timezone.utc)
-        prop.updated_at = datetime.now().astimezone()            # TODO: unmodify(?) but this is system local time
+        prop.updated_at = datetime.now(timezone.utc)
     def add_observer(self, observer: Observer):
         """Add an observer to track user behavior.
         

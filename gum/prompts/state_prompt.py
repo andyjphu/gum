@@ -9,7 +9,9 @@
 #   Pass 5: Refined primitives (informed by Pass 2, 3, 4)  <- sliding window starts
 #   Pass 6: Refined intents (informed by Pass 3, 4, 5)
 
+from dataclasses import dataclass
 from typing import List, Dict, Any, Tuple
+
 
 # =============================================================================
 # PASS 1: PRIMITIVE STATE EXTRACTION (Odd passes start here)
@@ -348,22 +350,99 @@ def get_context_passes(current_pass: int) -> List[int]:
         return [current_pass - 3, current_pass - 2, current_pass - 1]
 
 
+@dataclass
+class _TemporalRun:
+    """A run of consecutive frames with the same state-set."""
+    start_idx: int
+    end_idx: int
+    state_str: str
+    concurrent: List[str]
+    conf_sum: float
+    count: int
+    pass_type: str
+
+    @property
+    def center_idx(self) -> int:
+        return (self.start_idx + self.end_idx) // 2
+
+    def format_line(self) -> str:
+        avg_conf = round(self.conf_sum / self.count, 1)
+        if self.count == 1:
+            prefix = f"  [{self.start_idx}]"
+        else:
+            prefix = f"  [{self.start_idx}-{self.end_idx}] ({self.count} frames)"
+
+        if self.pass_type == "primitive":
+            line = f"{prefix} {self.state_str} (conf: {avg_conf})"
+            if self.concurrent:
+                line += f" + concurrent: [{', '.join(self.concurrent)}]"
+        else:
+            line = f"{prefix} Intent: {self.state_str} (conf: {avg_conf})"
+            if self.concurrent:
+                line += f" + concurrent: [{', '.join(self.concurrent)}]"
+        return line
+
+
+def _collapse_to_runs(
+    pass_states: List[Dict[str, Any]],
+    start_idx: int,
+    end_idx: int,
+    pass_type: str,
+) -> List[_TemporalRun]:
+    """Tier 1: Collapse consecutive frames with identical state-sets into runs."""
+    window = pass_states[start_idx:end_idx]
+    if not window:
+        return []
+
+    runs: List[_TemporalRun] = []
+    for i, state in enumerate(window):
+        frame_idx = start_idx + i
+        if pass_type == "primitive":
+            state_str = state.get("primitive_state", state.get("state", "unknown"))
+            conf = float(state.get("confidence", 5))
+            concurrent = sorted(state.get("concurrent_states", []))
+        else:
+            state_str = state.get("hidden_intent", "unknown")
+            conf = float(state.get("intent_confidence", state.get("confidence", 5)))
+            concurrent = sorted(state.get("concurrent_intents", []))
+
+        # Extend current run if state-set matches
+        if runs and runs[-1].state_str == state_str and runs[-1].concurrent == concurrent:
+            runs[-1].end_idx = frame_idx
+            runs[-1].conf_sum += conf
+            runs[-1].count += 1
+        else:
+            runs.append(_TemporalRun(
+                start_idx=frame_idx,
+                end_idx=frame_idx,
+                state_str=state_str,
+                concurrent=concurrent,
+                conf_sum=conf,
+                count=1,
+                pass_type=pass_type,
+            ))
+    return runs
+
+
 def build_temporal_context(
     all_pass_states: Dict[int, List[Dict[str, Any]]],
     current_frame_idx: int,
     total_frames: int,
     context_passes: List[int],
-    max_frames: int = 50
+    max_frames: int = 50,
 ) -> str:
     """
-    Build temporal context from the 50 nearest frames across relevant passes.
+    Build temporal context from nearest frames with change-point compaction.
+
+    Consecutive frames with identical state-sets are collapsed into run-length
+    entries (lossless). No information is discarded.
 
     Args:
         all_pass_states: Dict mapping pass_num -> list of frame states
         current_frame_idx: Index of the current frame being analyzed
         total_frames: Total number of frames
         context_passes: Which passes to pull context from
-        max_frames: Maximum frames to include (default 50)
+        max_frames: Raw frame window size (default 50)
 
     Returns:
         Formatted context string
@@ -371,7 +450,6 @@ def build_temporal_context(
     if not context_passes or not all_pass_states:
         return "No temporal context available."
 
-    # Calculate frame range (centered on current frame)
     half_window = max_frames // 2
     start_idx = max(0, current_frame_idx - half_window)
     end_idx = min(total_frames, current_frame_idx + half_window)
@@ -381,34 +459,13 @@ def build_temporal_context(
         if pass_num not in all_pass_states:
             continue
 
-        pass_states = all_pass_states[pass_num]
         pass_type = get_pass_type(pass_num)
-
         lines.append(f"\n--- Pass {pass_num} ({pass_type}) ---")
 
-        # Get states within the temporal window
-        window_states = pass_states[start_idx:end_idx]
+        runs = _collapse_to_runs(all_pass_states[pass_num], start_idx, end_idx, pass_type)
 
-        for i, state in enumerate(window_states):
-            frame_idx = start_idx + i
-            distance = abs(frame_idx - current_frame_idx)
-
-            if pass_type == "primitive":
-                state_str = state.get("primitive_state", state.get("state", "unknown"))
-                conf = state.get("confidence", "?")
-                concurrent = state.get("concurrent_states", [])
-                line = f"  [{frame_idx}] (Δ{distance}) {state_str} (conf: {conf})"
-                if concurrent:
-                    line += f" + concurrent: [{', '.join(concurrent)}]"
-                lines.append(line)
-            else:
-                intent = state.get("hidden_intent", "unknown")
-                conf = state.get("intent_confidence", state.get("confidence", "?"))
-                concurrent = state.get("concurrent_intents", [])
-                line = f"  [{frame_idx}] (Δ{distance}) Intent: {intent} (conf: {conf})"
-                if concurrent:
-                    line += f" + concurrent: [{', '.join(concurrent)}]"
-                lines.append(line)
+        for run in runs:
+            lines.append(run.format_line())
 
     return "\n".join(lines) if lines else "No temporal context available."
 
@@ -478,7 +535,8 @@ def build_multi_pass_context(
     all_pass_states: Dict[int, List[Dict[str, Any]]],
     all_pass_summaries: Dict[int, str],
     context_passes: List[int],
-    max_unique_per_pass: int = 15
+    max_unique_per_pass: int = 15,
+    meta_summary: str = "",
 ) -> str:
     """
     Build context from multiple prior passes for refined analysis.
@@ -488,14 +546,24 @@ def build_multi_pass_context(
         all_pass_summaries: Dict mapping pass_num -> summary string
         context_passes: Which passes to include [e.g., [2, 3, 4] for pass 5]
         max_unique_per_pass: Max unique states to show per pass
+        meta_summary: Compacted history from passes that fell out of the
+            sliding window. Prepended when non-empty.
 
     Returns:
         Formatted multi-pass context string
     """
-    if not context_passes:
+    if not context_passes and not meta_summary:
         return "No prior context available."
 
     sections = []
+
+    if meta_summary:
+        sections.append(
+            f"=== Compacted history (earlier passes) ===\n{meta_summary}"
+        )
+
+    if not context_passes:
+        return "\n".join(sections)
 
     for pass_num in context_passes:
         pass_type = get_pass_type(pass_num)
@@ -504,7 +572,7 @@ def build_multi_pass_context(
 
         # Add summary if available
         if pass_num in all_pass_summaries and all_pass_summaries[pass_num]:
-            section_lines.append(f"Summary: {all_pass_summaries[pass_num][:500]}...")
+            section_lines.append(f"Summary: {all_pass_summaries[pass_num]}")
 
         # Add deduplicated states
         if pass_num in all_pass_states:

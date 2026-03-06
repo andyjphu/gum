@@ -34,5 +34,14 @@ DEFAULT_CONTEXT_WINDOW_SIZE = int(os.getenv("GUM_CONTEXT_WINDOW_SIZE", "20"))
 # Number of temporally nearest frames to include in context (for intent inference)
 DEFAULT_TEMPORAL_WINDOW_SIZE = int(os.getenv("GUM_TEMPORAL_WINDOW_SIZE", "50"))
 
+# Meta-summary character budget for compacted dropped passes
+DEFAULT_META_SUMMARY_MAX_CHARS = int(os.getenv("GUM_META_SUMMARY_MAX_CHARS", "800"))
+
+# Max temporal entries per pass after change-point compaction
+DEFAULT_MAX_TEMPORAL_ENTRIES = int(os.getenv("GUM_MAX_TEMPORAL_ENTRIES", "25"))
+
+# Overflow safety net: skip frame if estimated prompt tokens exceed this threshold
+DEFAULT_PROMPT_TOKEN_THRESHOLD = int(os.getenv("GUM_PROMPT_TOKEN_THRESHOLD", "28000"))
+
 # Directory for storing pass outputs (states, summaries)
 PASS_OUTPUT_DIR = Path(os.getenv("GUM_PASS_OUTPUT_DIR", DATA_DIR / "passes"))
