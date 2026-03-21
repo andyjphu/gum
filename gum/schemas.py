@@ -21,10 +21,6 @@ class PrimitiveStateSchema(BaseModel):
         ...,
         description="Observable action (e.g., 'walking', 'typing', 'pointing_at_screen')"
     )
-    concurrent_states: List[str] = Field(
-        default_factory=list,
-        description="Additional simultaneous actions if the user is doing multiple things at once (e.g., ['listening_to_music', 'drinking_coffee']). Empty if only one activity."
-    )
     body_position: Optional[str] = Field(
         None,
         description="Body posture/position if observable (e.g., 'standing', 'sitting', 'leaning')"
@@ -34,13 +30,6 @@ class PrimitiveStateSchema(BaseModel):
         description="Objects the user is interacting with (e.g., ['phone', 'coffee_cup'])"
     )
     confidence: int = Field(..., ge=1, le=10, description="Confidence score from 1 (low) to 10 (high)")
-
-    @field_validator('concurrent_states', mode='before')
-    @classmethod
-    def clean_concurrent_states(cls, v):
-        if not v:
-            return []
-        return list(dict.fromkeys(s for s in v if s and isinstance(s, str) and s.strip()))
 
     model_config = ConfigDict(extra="allow")
 
@@ -53,10 +42,6 @@ class HiddenIntentSchema(BaseModel):
     hidden_intent: str = Field(
         ...,
         description="Inferred intent/goal (e.g., 'commuting_to_work', 'preparing_meal_for_family')"
-    )
-    concurrent_intents: List[str] = Field(
-        default_factory=list,
-        description="Additional simultaneous intents if the user has multiple goals at once (e.g., ['staying_informed', 'relaxing']). Empty if only one intent."
     )
     supporting_primitives: List[str] = Field(
         default_factory=list,
@@ -71,13 +56,6 @@ class HiddenIntentSchema(BaseModel):
         description="Other possible intents if ambiguous"
     )
 
-    @field_validator('concurrent_intents', mode='before')
-    @classmethod
-    def clean_concurrent_intents(cls, v):
-        if not v:
-            return []
-        return list(dict.fromkeys(s for s in v if s and isinstance(s, str) and s.strip()))
-
     model_config = ConfigDict(extra="allow")
 
 
@@ -89,10 +67,6 @@ class RefinedPrimitiveSchema(BaseModel):
     primitive_state: str = Field(
         ...,
         description="Refined observable action"
-    )
-    concurrent_states: List[str] = Field(
-        default_factory=list,
-        description="Additional simultaneous actions if the user is doing multiple things at once. Empty if only one activity."
     )
     body_position: Optional[str] = Field(None, description="Body posture/position")
     objects_interacted: Optional[List[str]] = Field(default_factory=list)
@@ -110,13 +84,6 @@ class RefinedPrimitiveSchema(BaseModel):
         description="Hidden intent that informed this refinement"
     )
 
-    @field_validator('concurrent_states', mode='before')
-    @classmethod
-    def clean_concurrent_states(cls, v):
-        if not v:
-            return []
-        return list(dict.fromkeys(s for s in v if s and isinstance(s, str) and s.strip()))
-
     model_config = ConfigDict(extra="allow")
 
 
@@ -126,10 +93,6 @@ class RefinedIntentSchema(BaseModel):
     Refines intents with broader context.
     """
     hidden_intent: str = Field(..., description="Refined inferred intent/goal")
-    concurrent_intents: List[str] = Field(
-        default_factory=list,
-        description="Additional simultaneous intents if the user has multiple goals at once. Empty if only one intent."
-    )
     supporting_primitives: List[str] = Field(default_factory=list)
     intent_confidence: int = Field(..., ge=1, le=10)
     alternative_intents: Optional[List[str]] = Field(default_factory=list)
@@ -142,13 +105,6 @@ class RefinedIntentSchema(BaseModel):
         None,
         description="Whether subsequent frames validated or invalidated this intent"
     )
-
-    @field_validator('concurrent_intents', mode='before')
-    @classmethod
-    def clean_concurrent_intents(cls, v):
-        if not v:
-            return []
-        return list(dict.fromkeys(s for s in v if s and isinstance(s, str) and s.strip()))
 
     model_config = ConfigDict(extra="allow")
 

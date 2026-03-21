@@ -34,16 +34,12 @@ You have been given a comprehensive statistical summary of a user's observed beh
    - Linear A→B→C→D suggests a procedural workflow
    - High self-transition rate suggests deep focus; low rate suggests exploration
 
-4. Use CONCURRENT PATTERNS for multitasking insights
-   - Regular concurrent states reveal habitual background activities
-   - Changing concurrent patterns may reveal context shifts
-
-5. Use ENTROPY and STABILITY metrics to characterize the session
+4. Use ENTROPY and STABILITY metrics to characterize the session
    - High entropy + low stability = exploratory session
    - Low entropy + high stability = focused, routine session
    - High entropy + high stability = complex but well-understood behavior
 
-6. Each goal should be DISTINCT — cover different aspects of the user's behavior
+5. Each goal should be DISTINCT — cover different aspects of the user's behavior
 
 ## Behavioral Data Summary
 
@@ -64,9 +60,6 @@ You have been given a comprehensive statistical summary of a user's observed beh
 
 ### Session Metrics:
 {session_metrics}
-
-### Concurrent Activity Patterns:
-{concurrent_patterns}
 
 ### Primitive-Intent Alignment:
 {alignment_summary}
@@ -244,22 +237,6 @@ def build_goal_context(
             session_lines.append(f"    Unique intents: {unique_i}")
     session_metrics = "\n".join(session_lines) if session_lines else "  No session metrics available"
 
-    # --- Concurrent patterns ---
-    conc_lines: List[str] = []
-    for pass_key in sorted(metrics.get("passes", {}).keys()):
-        pass_info = metrics["passes"][pass_key]
-        m = pass_info.get("metrics", {})
-        ratio = m.get("concurrent_ratio", 0)
-        if ratio and ratio > 0:
-            conc_lines.append(f"  {pass_key}: {ratio:.1%} of frames have concurrent states")
-            top_conc = m.get("top_concurrent", [])
-            for item in top_conc[:5]:
-                if isinstance(item, (list, tuple)) and len(item) == 2:
-                    conc_lines.append(f"    - {item[0]} ({item[1]} frames)")
-                else:
-                    conc_lines.append(f"    - {item}")
-    concurrent_patterns = "\n".join(conc_lines) if conc_lines else "  No concurrent activity detected"
-
     # --- Alignment ---
     alignment = metrics.get("alignment", {})
     align_lines: List[str] = []
@@ -304,7 +281,7 @@ def build_goal_context(
         "bottom_intents": bottom_intents,
         "top_transitions": top_transitions,
         "session_metrics": session_metrics,
-        "concurrent_patterns": concurrent_patterns,
+
         "alignment_summary": alignment_summary,
         "convergence_summary": convergence_summary,
     }

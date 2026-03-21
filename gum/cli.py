@@ -5,6 +5,7 @@ import os
 import argparse
 import asyncio
 import shutil
+import sys
 from gum import gum
 
 from gum.observers.retro import Retro
@@ -13,7 +14,9 @@ from gum.config import (
     CACHE_DIR,
     RETRO_IMAGES_DIR,
     DEFAULT_NUM_PASSES,
-    DEFAULT_CONTEXT_WINDOW_SIZE
+    DEFAULT_CONTEXT_WINDOW_SIZE,
+    DEFAULT_MAX_STATES_IN_CONTEXT,
+    DEFAULT_PASS_WINDOW_SIZE,
 )
 
 class QueryAction(argparse.Action):
@@ -59,7 +62,19 @@ def parse_args():
         '--context-window-size', '-c',
         type=int,
         default=None,
-        help=f'Max unique states in context window for re-analysis (default: {DEFAULT_CONTEXT_WINDOW_SIZE})'
+        help=f'Temporal frame window size for context (default: {DEFAULT_CONTEXT_WINDOW_SIZE})'
+    )
+    parser.add_argument(
+        '--max-states-in-context',
+        type=int,
+        default=None,
+        help=f'Max unique state labels per pass in multi-pass context (default: {DEFAULT_MAX_STATES_IN_CONTEXT})'
+    )
+    parser.add_argument(
+        '--pass-window-size',
+        type=int,
+        default=None,
+        help=f'Number of prior passes to include in context window (default: {DEFAULT_PASS_WINDOW_SIZE})'
     )
 
     args = parser.parse_args()
@@ -127,16 +142,20 @@ async def main():
         # Multi-pass configuration
         num_passes = args.num_passes or int(os.getenv('GUM_NUM_PASSES', str(DEFAULT_NUM_PASSES)))
         context_window_size = args.context_window_size or int(os.getenv('GUM_CONTEXT_WINDOW_SIZE', str(DEFAULT_CONTEXT_WINDOW_SIZE)))
+        max_states_in_context = args.max_states_in_context or int(os.getenv('GUM_MAX_STATES_IN_CONTEXT', str(DEFAULT_MAX_STATES_IN_CONTEXT)))
+        pass_window_size = args.pass_window_size or int(os.getenv('GUM_PASS_WINDOW_SIZE', str(DEFAULT_PASS_WINDOW_SIZE)))
 
         print(f"Listening to {user_name} with model {model}")
-        print(f"Multi-pass: {num_passes} passes, context window: {context_window_size}")
+        print(f"Multi-pass: {num_passes} passes, context window: {context_window_size}, max states in context: {max_states_in_context}, pass window: {pass_window_size}")
 
         retro_observer = Retro(
             model_name=model,
             debug=True,
             images_dir=RETRO_IMAGES_DIR,
             num_passes=num_passes,
-            context_window_size=context_window_size
+            context_window_size=context_window_size,
+            max_states_in_context=max_states_in_context,
+            pass_window_size=pass_window_size,
         )
 
         async with gum(
@@ -146,14 +165,35 @@ async def main():
                 min_batch_size=min_batch_size,
                 max_batch_size=max_batch_size
         ) as gum_instance:
-            try:
-                await retro_observer.stopped.wait()
-            except Exception:
-                print("Retro observer failed to loop until done")
+            await retro_observer.stopped.wait()
+
+            # Check if the observer's background task failed with an exception.
+            # The task runs via asyncio.create_task so exceptions are stored on
+            # the Task object rather than propagating automatically.
+            if retro_observer._task and retro_observer._task.done():
+                exc = retro_observer._task.exception()
+                if exc is not None:
+                    raise exc
 
 
 def cli():
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as exc:
+        import traceback
+        msg = f"\n[FATAL] {exc}\n{traceback.format_exc()}"
+        print(msg, file=sys.stderr)
+        # Persist to mounted volume so the error survives container removal
+        log_dir = os.environ.get("GUM_TRAFFIC_LOG_DIR", "")
+        if log_dir:
+            try:
+                os.makedirs(log_dir, exist_ok=True)
+                with open(os.path.join(log_dir, "FATAL.log"), "a") as f:
+                    from datetime import datetime, timezone
+                    f.write(f"[{datetime.now(timezone.utc).isoformat()}] {msg}\n")
+            except OSError:
+                pass
+        sys.exit(1)
 
 
 if __name__ == '__main__':

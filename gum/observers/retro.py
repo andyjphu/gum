@@ -1,13 +1,7 @@
 # Author: Andy Phu
-# Retroactive observer with multi-pass analysis for egocentric footage
-#
-# Pass structure (alternating primitive/intent):
-#   Pass 1: Primitive states (observable actions)
-#   Pass 2: Hidden intents (informed by Pass 1)
-#   Pass 3: Refined primitives (informed by Pass 1, 2)
-#   Pass 4: Refined intents (informed by Pass 1, 2, 3)
-#   Pass 5: Refined primitives (informed by Pass 2, 3, 4)  <- sliding window
-#   Pass 6: Refined intents (informed by Pass 3, 4, 5)
+# Retroactive observer with multi-pass analysis for egocentric footage.
+# Odd passes extract primitives, even passes infer intents.
+# Each pass sees the previous pass_window_size passes as context.
 
 from __future__ import annotations
 
@@ -39,8 +33,8 @@ from ..config import (
     DEFAULT_NUM_PASSES,
     DEFAULT_CONTEXT_WINDOW_SIZE,
     DEFAULT_TEMPORAL_WINDOW_SIZE,
-    DEFAULT_META_SUMMARY_MAX_CHARS,
-    DEFAULT_PROMPT_TOKEN_THRESHOLD,
+    DEFAULT_PASS_WINDOW_SIZE,
+    DEFAULT_MAX_STATES_IN_CONTEXT,
     PASS_OUTPUT_DIR,
     SHARED_DIR,
     TRAFFIC_LOG_DIR,
@@ -56,12 +50,11 @@ from gum.prompts.state_prompt import (
     REFINED_INTENT_PROMPT,
     PRIMITIVE_SUMMARY_PROMPT,
     INTENT_SUMMARY_PROMPT,
-    COMBINED_SUMMARY_PROMPT,
     get_pass_type,
     get_context_passes,
     build_temporal_context,
     build_multi_pass_context,
-    build_context_window,
+    _collapse_to_runs,
 )
 from gum.metrics import (
     compute_all_metrics,
@@ -93,17 +86,16 @@ class Retro(Observer):
 
     Context window logic:
     - Pass 1: No context (raw observation)
-    - Pass 2: Context from Pass 1
-    - Pass 3: Context from Pass 1, 2
-    - Pass 4: Context from Pass 1, 2, 3
-    - Pass 5+: Sliding window of previous 3 passes
+    - Pass 2+: Sliding window of previous pass_window_size passes
 
     Args:
         images_dir: Directory containing screenshots to process.
         model_name: GPT model to use for vision analysis.
         num_passes: Number of analysis passes (default: 6).
-        context_window_size: Max unique states in context for re-analysis.
-        temporal_window_size: Number of temporally nearest frames for context.
+        context_window_size: Temporal frame window (backward/forward split).
+        temporal_window_size: Deprecated, kept for entrypoint compatibility.
+        pass_window_size: Number of prior passes in the sliding window.
+        max_states_in_context: Max unique state labels per pass in multi-pass context.
         history_k: Number of recent screenshots to keep in history.
         process_delay: Delay between processing each image (seconds).
         debug: Enable debug logging.
@@ -118,6 +110,8 @@ class Retro(Observer):
         num_passes: int = DEFAULT_NUM_PASSES,
         context_window_size: int = DEFAULT_CONTEXT_WINDOW_SIZE,
         temporal_window_size: int = DEFAULT_TEMPORAL_WINDOW_SIZE,
+        pass_window_size: int = DEFAULT_PASS_WINDOW_SIZE,
+        max_states_in_context: int = DEFAULT_MAX_STATES_IN_CONTEXT,
         history_k: int = DEFAULT_HISTORY_K,
         process_delay: float = SHORT_SLEEP_SEC,
         debug: bool = False,
@@ -136,7 +130,9 @@ class Retro(Observer):
         # Multi-pass configuration
         self.num_passes = max(1, num_passes)
         self.context_window_size = context_window_size
-        self.temporal_window_size = temporal_window_size
+        self.pass_window_size = pass_window_size
+        self.max_states_in_context = max_states_in_context
+        self.temporal_window_size = temporal_window_size  # deprecated, kept for compat
 
         # Model config
         self.model_name = model_name
@@ -152,10 +148,6 @@ class Retro(Observer):
         self._pass_states: Dict[int, List[Dict[str, Any]]] = {}  # pass_num -> states
         self._pass_summaries: Dict[int, str] = {}  # pass_num -> summary text
         self._current_pass: int = 1
-
-        # Pass-level compaction: rolling meta-summary for dropped passes
-        self._meta_summary: str = ""
-        self._compacted_passes: set[int] = set()
 
         # Output directory
         self.output_dir = PASS_OUTPUT_DIR
@@ -207,139 +199,6 @@ class Retro(Observer):
         """Get the current pass type as string."""
         return get_pass_type(self._current_pass)
 
-    async def _compact_dropped_summaries(
-        self, current_pass: int, video_name: Optional[str] = None
-    ) -> None:
-        """Compact summaries from passes that fell out of the sliding context window.
-
-        Uses map-reduce to condense dropped pass summaries without truncation.
-        """
-        context_passes = set(get_context_passes(current_pass))
-
-        # Collect summaries from passes that just dropped out
-        new_dropped: List[str] = []
-        for pass_num in sorted(self._pass_summaries.keys()):
-            if pass_num not in context_passes and pass_num not in self._compacted_passes:
-                summary = self._pass_summaries[pass_num]
-                new_dropped.append(f"[P{pass_num}] {summary}")
-                self._compacted_passes.add(pass_num)
-
-        if not new_dropped:
-            return
-
-        # Combine existing meta-summary with newly dropped summaries
-        combined = self._meta_summary + "\n".join(new_dropped)
-
-        # Map-reduce if combined text exceeds budget
-        max_meta_tokens = DEFAULT_META_SUMMARY_MAX_CHARS // 4
-        if len(combined) // 4 > max_meta_tokens:
-            combined = await self._map_reduce_summarize(
-                combined, max_meta_tokens, video_name,
-                "compacted pass history",
-            )
-
-        self._meta_summary = combined
-
-    def _check_prompt_overflow(
-        self,
-        prompt_text: str,
-        image_tokens: int,
-        video_name: Optional[str],
-        pass_num: int,
-        frame_id: str,
-    ) -> bool:
-        """Estimate prompt tokens; if over threshold, serialize to disk and return True."""
-        estimated_tokens = len(prompt_text) // 4 + image_tokens
-        if estimated_tokens <= DEFAULT_PROMPT_TOKEN_THRESHOLD:
-            return False
-
-        run_history_dir = SHARED_DIR / "run_history"
-        run_history_dir.mkdir(parents=True, exist_ok=True)
-        dump_path = run_history_dir / f"{video_name or 'unknown'}_P{pass_num}_{frame_id}.json"
-        dump_path.write_text(json.dumps({
-            "video": video_name,
-            "pass": pass_num,
-            "frame": frame_id,
-            "estimated_tokens": estimated_tokens,
-            "threshold": DEFAULT_PROMPT_TOKEN_THRESHOLD,
-            "prompt_text": prompt_text,
-        }, indent=2))
-        self.logger.warning(
-            f"Prompt overflow ({estimated_tokens} tokens > {DEFAULT_PROMPT_TOKEN_THRESHOLD}), "
-            f"dumped to {dump_path}"
-        )
-        return True
-
-    async def _map_reduce_summarize(
-        self,
-        text: str,
-        max_output_tokens: int,
-        video_name: Optional[str],
-        context_label: str,
-    ) -> str:
-        """Map-reduce summarization for text that exceeds the model's context budget.
-
-        Chunks the input text, generates a partial summary for each chunk via the
-        LLM, then merges partial summaries. Recurses if the merged result still
-        exceeds the budget.
-
-        Args:
-            text: Full text to summarize
-            max_output_tokens: Target token budget for the final output
-            video_name: For debug logging
-            context_label: Description of what's being summarized (for prompts)
-        """
-        estimated_tokens = len(text) // 4
-        if estimated_tokens <= max_output_tokens:
-            return text
-
-        # Chunk into pieces that fit comfortably in a single prompt
-        # Leave room for the summarization instruction (~200 tokens)
-        chunk_budget_chars = (DEFAULT_PROMPT_TOKEN_THRESHOLD - 200) * 4
-        chunks = []
-        for i in range(0, len(text), chunk_budget_chars):
-            chunk = text[i:i + chunk_budget_chars]
-            if chunk.strip():
-                chunks.append(chunk)
-
-        if not chunks:
-            return text
-
-        self.logger.info(
-            f"Map-reduce {context_label}: {estimated_tokens} tokens "
-            f"-> {len(chunks)} chunks"
-        )
-
-        # Map: summarize each chunk
-        partial_summaries = []
-        for idx, chunk in enumerate(chunks):
-            map_prompt = (
-                f"Summarize the following {context_label} concisely, preserving "
-                f"all distinct states/intents and their frequencies. Do not drop "
-                f"any entries — compress descriptions, not data.\n\n{chunk}"
-            )
-            try:
-                partial = await self._call_vision_api(
-                    prompt=map_prompt,
-                    img_paths=[],
-                    video_name=video_name,
-                )
-                partial_summaries.append(partial)
-            except Exception as exc:
-                self.logger.warning(f"Map step {idx} failed: {exc}")
-                partial_summaries.append(chunk[:500])
-
-        # Reduce: merge partial summaries
-        merged = "\n\n".join(partial_summaries)
-
-        # Recurse if still over budget
-        if len(merged) // 4 > max_output_tokens:
-            return await self._map_reduce_summarize(
-                merged, max_output_tokens, video_name,
-                f"{context_label} (reduce pass)"
-            )
-
-        return merged
 
     def _save_single_state(self, video_name: Optional[str], state_data: Dict[str, Any]) -> None:
         """Save a single state entry to its timestamp folder immediately.
@@ -410,16 +269,9 @@ class Retro(Observer):
                 ts = m.group(1)
                 if ts not in timestamps:
                     timestamps[ts] = {}
-                # Collect concurrent states/intents depending on pass type
-                if pass_type == "primitive":
-                    concurrent = state_data.get("concurrent_states", [])
-                else:
-                    concurrent = state_data.get("concurrent_intents", [])
-
                 timestamps[ts][pass_num] = {
                     "type": pass_type,
                     "state": state_data.get("primitive_state") or state_data.get("hidden_intent", "unknown"),
-                    "concurrent": concurrent,
                     "confidence": state_data.get("confidence") or state_data.get("intent_confidence", 0),
                     "body_position": state_data.get("body_position"),
                     "objects": state_data.get("objects_interacted", []),
@@ -444,7 +296,6 @@ class Retro(Observer):
             primitive_passes = [p for p in passes_data.keys() if passes_data[p]["type"] == "primitive"]
             final_pass = max(primitive_passes) if primitive_passes else max(passes_data.keys())
             final_state = passes_data[final_pass]["state"]
-            final_concurrent = [c for c in passes_data[final_pass].get("concurrent", []) if c]
 
             # Determine transition from previous frame
             transition = None
@@ -455,20 +306,13 @@ class Retro(Observer):
                 if prev_primitive_passes:
                     prev_final_pass = max(prev_primitive_passes)
                     prev_state = prev_passes[prev_final_pass]["state"]
-                    prev_concurrent = [c for c in prev_passes[prev_final_pass].get("concurrent", []) if c]
-                    # Transition fires when the state-set changes (primary + concurrent)
-                    curr_set = frozenset([final_state] + final_concurrent)
-                    prev_set = frozenset([prev_state] + prev_concurrent)
-                    if curr_set != prev_set:
+                    if final_state != prev_state:
                         # Get intent from current frame's highest intent pass as trigger
                         intent_passes = [p for p in passes_data.keys() if passes_data[p]["type"] == "intent"]
                         trigger = passes_data[max(intent_passes)]["state"] if intent_passes else f"to_{final_state}"
-                        # Compute relative timestamp (5 seconds per frame)
                         transition = {
                             "source": prev_state,
-                            "source_concurrent": prev_concurrent,
                             "dest": final_state,
-                            "dest_concurrent": final_concurrent,
                             "trigger": trigger,
                             "timestamp": i * 5.0,
                         }
@@ -478,7 +322,6 @@ class Retro(Observer):
                 "image_path": passes_data[final_pass].get("image_path", ""),
                 "passes": {f"P{p}": data for p, data in sorted(passes_data.items())},
                 "final_state": final_state,
-                "final_concurrent_states": final_concurrent,
                 "final_confidence": passes_data[final_pass]["confidence"],
                 "transition_from_prev": transition,
             }
@@ -497,6 +340,7 @@ class Retro(Observer):
         img_paths: list[str],
         video_name: Optional[str] = None,
         response_format: Optional[dict] = None,
+        max_tokens: Optional[int] = None,
     ) -> str:
         """Call GPT Vision API to analyze images."""
         content = []
@@ -524,6 +368,10 @@ class Retro(Observer):
         pass_type = self._get_pass_type_str()
         debug_tag = f"[Retro{pass_suffix}:{pass_type}]"
 
+        extra_kwargs = {}
+        if max_tokens is not None:
+            extra_kwargs["max_tokens"] = max_tokens
+
         rsp = await invoke(
             model=self.model_name,
             messages=[{"role": "user", "content": content}],
@@ -532,9 +380,52 @@ class Retro(Observer):
             debug_img_paths=img_paths,
             debug_path=video_name,
             client=self.client,
+            **extra_kwargs,
         )
 
-        return rsp.choices[0].message.content
+        choice = rsp.choices[0]
+        if max_tokens is not None and choice.finish_reason == "length":
+            self._log_hard_cap_hit(
+                video_name=video_name,
+                max_tokens=max_tokens,
+                truncated_content=choice.message.content,
+                debug_tag=debug_tag,
+            )
+
+        return choice.message.content
+
+    def _log_hard_cap_hit(
+        self,
+        video_name: Optional[str],
+        max_tokens: int,
+        truncated_content: str,
+        debug_tag: str,
+    ) -> None:
+        """Log when an LLM response was truncated by the max_tokens hard cap."""
+        from datetime import datetime, timezone
+        log_dir = SHARED_DIR / "log"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / "hard_cap_truncations.log"
+
+        timestamp = datetime.now(timezone.utc).isoformat()
+        video = video_name or "unknown"
+        entry = (
+            f"[{timestamp}] {debug_tag} video={video} "
+            f"pass={self._current_pass} max_tokens={max_tokens}\n"
+            f"  TRUNCATED OUTPUT ({len(truncated_content)} chars):\n"
+            f"  {truncated_content}\n"
+            f"{'─' * 80}\n"
+        )
+
+        try:
+            with open(log_file, "a") as f:
+                f.write(entry)
+            self.logger.warning(
+                f"Hard cap hit: {debug_tag} video={video} pass={self._current_pass} "
+                f"— output truncated at {max_tokens} tokens. See {log_file}"
+            )
+        except OSError as exc:
+            self.logger.error(f"Failed to write hard cap log: {exc}")
 
     # ─────────────────────────────── Pass 1: Primitive State Extraction
 
@@ -544,20 +435,7 @@ class Retro(Observer):
         video_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Extract primitive (observable) state from a single image (Pass 1)."""
-        prompt = PRIMITIVE_STATE_PROMPT.format(additional_fields="")
-
-        frame_id = Path(img_path).stem
-        if self._check_prompt_overflow(prompt, 3000, video_name, 1, frame_id):
-            return {
-                "primitive_state": "overflow_skipped",
-                "concurrent_states": [],
-                "confidence": 0,
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "primitive",
-                "error": "prompt_overflow",
-            }
+        prompt = PRIMITIVE_STATE_PROMPT
 
         try:
             result = await self._call_vision_api(
@@ -571,7 +449,6 @@ class Retro(Observer):
 
             return {
                 "primitive_state": parsed.get("primitive_state", "unknown"),
-                "concurrent_states": parsed.get("concurrent_states", []),
                 "body_position": parsed.get("body_position"),
                 "objects_interacted": parsed.get("objects_interacted", []),
                 "confidence": parsed.get("confidence", 5),
@@ -587,7 +464,6 @@ class Retro(Observer):
                 self.logger.error(traceback.format_exc())
             return {
                 "primitive_state": "extraction_failed",
-                "concurrent_states": [],
                 "confidence": 0,
                 "image_path": img_path,
                 "video_name": video_name,
@@ -606,36 +482,20 @@ class Retro(Observer):
         video_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Infer hidden intent from primitive states (Pass 2)."""
-        # Get context from Pass 1
-        context_passes = get_context_passes(self._current_pass)
         prior_summary = self._pass_summaries.get(1, "No prior summary available.")
 
         temporal_context = build_temporal_context(
             self._pass_states,
             frame_idx,
             total_frames,
-            context_passes,
-            self.temporal_window_size
+            self._current_pass,
+            self.context_window_size,
         )
 
         prompt = HIDDEN_INTENT_PROMPT.format(
             prior_summary=prior_summary,
             temporal_context=temporal_context,
-            additional_fields=""
         )
-
-        frame_id = Path(img_path).stem
-        if self._check_prompt_overflow(prompt, 3000, video_name, self._current_pass, frame_id):
-            return {
-                "hidden_intent": "overflow_skipped",
-                "concurrent_intents": [],
-                "intent_confidence": 0,
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "intent",
-                "error": "prompt_overflow",
-            }
 
         try:
             result = await self._call_vision_api(
@@ -649,7 +509,6 @@ class Retro(Observer):
 
             return {
                 "hidden_intent": parsed.get("hidden_intent", "unknown"),
-                "concurrent_intents": parsed.get("concurrent_intents", []),
                 "supporting_primitives": parsed.get("supporting_primitives", []),
                 "intent_confidence": parsed.get("intent_confidence", 5),
                 "alternative_intents": parsed.get("alternative_intents", []),
@@ -665,7 +524,6 @@ class Retro(Observer):
                 self.logger.error(traceback.format_exc())
             return {
                 "hidden_intent": "inference_failed",
-                "concurrent_intents": [],
                 "intent_confidence": 0,
                 "image_path": img_path,
                 "video_name": video_name,
@@ -684,33 +542,27 @@ class Retro(Observer):
         video_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Refine primitive state with context from prior passes (Pass 3, 5, ...)."""
-        context_passes = get_context_passes(self._current_pass)
+        context_passes = get_context_passes(self._current_pass, self.pass_window_size)
 
         prior_context = build_multi_pass_context(
             self._pass_states,
             self._pass_summaries,
             context_passes,
+            self.max_states_in_context,
+        )
+
+        temporal_context = build_temporal_context(
+            self._pass_states,
+            frame_idx,
+            total_frames,
+            self._current_pass,
             self.context_window_size,
-            meta_summary=self._meta_summary,
         )
 
         prompt = REFINED_PRIMITIVE_PROMPT.format(
             prior_context=prior_context,
-            additional_fields=""
+            temporal_context=temporal_context,
         )
-
-        frame_id = Path(img_path).stem
-        if self._check_prompt_overflow(prompt, 3000, video_name, self._current_pass, frame_id):
-            return {
-                "primitive_state": "overflow_skipped",
-                "concurrent_states": [],
-                "confidence": 0,
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "primitive",
-                "error": "prompt_overflow",
-            }
 
         try:
             result = await self._call_vision_api(
@@ -724,7 +576,6 @@ class Retro(Observer):
 
             return {
                 "primitive_state": parsed.get("primitive_state", "unknown"),
-                "concurrent_states": parsed.get("concurrent_states", []),
                 "body_position": parsed.get("body_position"),
                 "objects_interacted": parsed.get("objects_interacted", []),
                 "confidence": parsed.get("confidence", 5),
@@ -743,7 +594,6 @@ class Retro(Observer):
                 self.logger.error(traceback.format_exc())
             return {
                 "primitive_state": "refinement_failed",
-                "concurrent_states": [],
                 "confidence": 0,
                 "image_path": img_path,
                 "video_name": video_name,
@@ -762,43 +612,28 @@ class Retro(Observer):
         video_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Refine hidden intent with broader context (Pass 4, 6, ...)."""
-        context_passes = get_context_passes(self._current_pass)
+        context_passes = get_context_passes(self._current_pass, self.pass_window_size)
 
         prior_context = build_multi_pass_context(
             self._pass_states,
             self._pass_summaries,
             context_passes,
-            self.context_window_size,
-            meta_summary=self._meta_summary,
+            self.max_states_in_context,
         )
 
         temporal_context = build_temporal_context(
             self._pass_states,
             frame_idx,
             total_frames,
-            context_passes,
-            self.temporal_window_size
+            self._current_pass,
+            self.context_window_size,
         )
 
         prompt = REFINED_INTENT_PROMPT.format(
             context_passes=", ".join(str(p) for p in context_passes),
             prior_context=prior_context,
             temporal_context=temporal_context,
-            additional_fields=""
         )
-
-        frame_id = Path(img_path).stem
-        if self._check_prompt_overflow(prompt, 3000, video_name, self._current_pass, frame_id):
-            return {
-                "hidden_intent": "overflow_skipped",
-                "concurrent_intents": [],
-                "intent_confidence": 0,
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "intent",
-                "error": "prompt_overflow",
-            }
 
         try:
             result = await self._call_vision_api(
@@ -812,7 +647,6 @@ class Retro(Observer):
 
             return {
                 "hidden_intent": parsed.get("hidden_intent", "unknown"),
-                "concurrent_intents": parsed.get("concurrent_intents", []),
                 "supporting_primitives": parsed.get("supporting_primitives", []),
                 "intent_confidence": parsed.get("intent_confidence", 5),
                 "alternative_intents": parsed.get("alternative_intents", []),
@@ -831,7 +665,6 @@ class Retro(Observer):
                 self.logger.error(traceback.format_exc())
             return {
                 "hidden_intent": "refinement_failed",
-                "concurrent_intents": [],
                 "intent_confidence": 0,
                 "image_path": img_path,
                 "video_name": video_name,
@@ -842,123 +675,186 @@ class Retro(Observer):
 
     # ─────────────────────────────── Summary generation
 
+    # Token budget for RLE content in summary prompts.
+    # Leaves room for prompt template (~100 tokens), prior summary (~500 tokens),
+    # and output (max_tokens=500) within the 32K model context.
+    _SUMMARY_RLE_TOKEN_BUDGET = 6000
+    _tokenizer = None
+
+    @classmethod
+    def _get_tokenizer(cls):
+        """Lazy-load the model tokenizer (cached as class-level singleton)."""
+        if cls._tokenizer is None:
+            from transformers import AutoTokenizer
+            cls._tokenizer = AutoTokenizer.from_pretrained(
+                "Qwen/Qwen3-VL-8B-Instruct", trust_remote_code=True,
+            )
+        return cls._tokenizer
+
+    @classmethod
+    def _count_tokens(cls, text: str) -> int:
+        """Count tokens using the model's tokenizer."""
+        return len(cls._get_tokenizer().encode(text))
+
+    def _chunk_rle_lines(
+        self,
+        rle_lines: List[str],
+        runs: list,
+        budget_tokens: int,
+    ) -> List[tuple]:
+        """Split RLE lines into chunks that fit within a token budget.
+
+        Uses the model's tokenizer for accurate token counting.
+        Returns list of (chunk_text, start_frame, end_frame) tuples.
+        """
+        chunks = []
+        current_lines = []
+        current_tokens = 0
+        chunk_start = runs[0].start_idx if runs else 0
+        last_run_end = chunk_start
+
+        for line, run in zip(rle_lines, runs):
+            line_tokens = self._count_tokens(line)
+            if current_tokens + line_tokens > budget_tokens and current_lines:
+                chunks.append((
+                    "\n".join(current_lines),
+                    chunk_start,
+                    last_run_end,
+                ))
+                current_lines = []
+                current_tokens = 0
+                chunk_start = run.start_idx
+            current_lines.append(line)
+            current_tokens += line_tokens
+            last_run_end = run.end_idx
+
+        if current_lines:
+            chunks.append((
+                "\n".join(current_lines),
+                chunk_start,
+                last_run_end,
+            ))
+
+        return chunks
+
     async def _generate_summary(
         self,
         states: List[Dict[str, Any]],
         video_name: Optional[str],
-        pass_type: str
+        pass_type: str,
+        pass_num: int,
     ) -> str:
-        """Generate summary based on pass type.
+        """Generate a pass summary using map-reduce when RLE exceeds token budget.
 
-        States are deduplicated by counting occurrences rather than listing
-        every frame, keeping the prompt within the model's context limit.
+        For small passes: single LLM call with full RLE (same as before).
+        For large passes: chunk the RLE, summarize each chunk independently
+        (map), then merge chunk summaries into a final summary (reduce).
         """
-        if pass_type == "primitive":
-            # Deduplicate: count occurrences per unique state
-            state_counts: Dict[str, Dict[str, Any]] = {}
-            for s in states:
-                prim = s.get("primitive_state", "unknown")
-                if prim not in state_counts:
-                    state_counts[prim] = {
-                        "count": 0,
-                        "concurrent": set(),
-                        "avg_conf": 0.0,
-                        "bodies": set(),
-                        "objects": set(),
-                    }
-                entry = state_counts[prim]
-                entry["count"] += 1
-                entry["avg_conf"] += float(s.get("confidence", 0))
-                for c in s.get("concurrent_states", []):
-                    entry["concurrent"].add(c)
-                if s.get("body_position"):
-                    entry["bodies"].add(s["body_position"])
-                for o in s.get("objects_interacted", []):
-                    entry["objects"].add(o)
+        from gum.prompts.state_prompt import (
+            CHUNK_PRIMITIVE_SUMMARY_PROMPT,
+            CHUNK_INTENT_SUMMARY_PROMPT,
+            MERGE_SUMMARIES_PROMPT,
+        )
 
-            state_lines = []
-            for prim, info in sorted(state_counts.items(), key=lambda x: -x[1]["count"]):
-                avg_conf = round(info["avg_conf"] / info["count"], 1)
-                line = f"- {prim} ({info['count']}x, avg confidence: {avg_conf})"
-                if info["concurrent"]:
-                    line += f" + concurrent: [{', '.join(sorted(info['concurrent']))}]"
-                if info["bodies"]:
-                    line += f" [positions: {', '.join(sorted(info['bodies']))}]"
-                if info["objects"]:
-                    line += f" [objects: {', '.join(sorted(info['objects']))}]"
-                state_lines.append(line)
+        runs = _collapse_to_runs(states, 0, len(states), pass_type)
+        rle_lines = [run.format_line() for run in runs]
+        rle_text = "\n".join(rle_lines) if rle_lines else f"No {pass_type}s extracted"
 
-            states_text = "\n".join(state_lines) if state_lines else "No primitives extracted"
+        prior_pass = pass_num - 1
+        prior_summary = self._pass_summaries.get(prior_pass, "")
 
-            # Map-reduce if frequency table exceeds context budget
-            # Reserve ~2000 tokens for the prompt template + response
-            max_table_tokens = DEFAULT_PROMPT_TOKEN_THRESHOLD - 2000
-            if len(states_text) // 4 > max_table_tokens:
-                states_text = await self._map_reduce_summarize(
-                    states_text, max_table_tokens, video_name,
-                    "primitive state frequency table",
-                )
+        rle_token_count = self._count_tokens(rle_text)
+        needs_map_reduce = rle_token_count > self._SUMMARY_RLE_TOKEN_BUDGET
 
-            prompt = PRIMITIVE_SUMMARY_PROMPT.format(states=states_text)
-
-        else:  # intent
-            # Get primitive summary from most recent primitive pass
-            primitive_passes = [p for p in self._pass_summaries.keys() if p % 2 == 1]
-            latest_primitive_pass = max(primitive_passes) if primitive_passes else None
-            primitive_summary = self._pass_summaries.get(latest_primitive_pass, "No primitive summary") if latest_primitive_pass else "No primitive summary"
-
-            # Deduplicate: count occurrences per unique intent
-            intent_counts: Dict[str, Dict[str, Any]] = {}
-            for s in states:
-                intent = s.get("hidden_intent", "unknown")
-                if intent not in intent_counts:
-                    intent_counts[intent] = {
-                        "count": 0,
-                        "concurrent": set(),
-                        "avg_conf": 0.0,
-                        "supporting": set(),
-                    }
-                entry = intent_counts[intent]
-                entry["count"] += 1
-                entry["avg_conf"] += float(s.get("intent_confidence", 0))
-                for c in s.get("concurrent_intents", []):
-                    entry["concurrent"].add(c)
-                for sp in s.get("supporting_primitives", []):
-                    entry["supporting"].add(sp)
-
-            intent_lines = []
-            for intent, info in sorted(intent_counts.items(), key=lambda x: -x[1]["count"]):
-                avg_conf = round(info["avg_conf"] / info["count"], 1)
-                line = f"- {intent} ({info['count']}x, avg confidence: {avg_conf})"
-                if info["concurrent"]:
-                    line += f" + concurrent: [{', '.join(sorted(info['concurrent']))}]"
-                if info["supporting"]:
-                    top_supporting = sorted(info["supporting"])[:5]
-                    line += f" [supporting: {', '.join(top_supporting)}]"
-                intent_lines.append(line)
-
-            intents_text = "\n".join(intent_lines) if intent_lines else "No intents inferred"
-
-            # Map-reduce if frequency table exceeds context budget
-            max_table_tokens = DEFAULT_PROMPT_TOKEN_THRESHOLD - 2000
-            if len(intents_text) // 4 > max_table_tokens:
-                intents_text = await self._map_reduce_summarize(
-                    intents_text, max_table_tokens, video_name,
-                    "intent frequency table",
-                )
-            prompt = INTENT_SUMMARY_PROMPT.format(
-                primitive_summary=primitive_summary,
-                intents=intents_text
+        if not needs_map_reduce:
+            return await self._generate_summary_single(
+                rle_text, prior_summary, pass_type, pass_num, video_name,
             )
 
-        if self._check_prompt_overflow(prompt, 0, video_name, self._current_pass, "summary"):
-            return f"Summary skipped due to prompt overflow ({len(prompt)} chars)"
+        # Map phase: chunk the RLE and summarize each chunk
+        chunks = self._chunk_rle_lines(rle_lines, runs, self._SUMMARY_RLE_TOKEN_BUDGET)
+        if self.debug:
+            self.logger.info(
+                f"[Pass {pass_num}] Map-reduce summary: "
+                f"{len(rle_lines)} RLE runs ({rle_token_count} tokens) -> {len(chunks)} chunks"
+            )
+
+        chunk_template = (
+            CHUNK_PRIMITIVE_SUMMARY_PROMPT if pass_type == "primitive"
+            else CHUNK_INTENT_SUMMARY_PROMPT
+        )
+
+        async def summarize_chunk(idx: int, chunk_text: str, start: int, end: int) -> str:
+            prompt = chunk_template.format(
+                chunk_num=idx + 1,
+                total_chunks=len(chunks),
+                start_frame=start,
+                end_frame=end,
+                states=chunk_text,
+                intents=chunk_text,
+            )
+            return await self._call_vision_api(
+                prompt=prompt, img_paths=[], video_name=video_name, max_tokens=300,
+            )
+
+        chunk_summaries = await asyncio.gather(*[
+            summarize_chunk(i, text, start, end)
+            for i, (text, start, end) in enumerate(chunks)
+        ])
+
+        # Reduce phase: merge chunk summaries with prior context
+        numbered = "\n\n".join(
+            f"### Chunk {i+1} (frames {chunks[i][1]}-{chunks[i][2]}):\n{s}"
+            for i, s in enumerate(chunk_summaries)
+        )
+        merge_prompt = MERGE_SUMMARIES_PROMPT.format(
+            prior_summary=prior_summary or "No prior summary available.",
+            chunk_summaries=numbered,
+        )
 
         try:
             summary = await self._call_vision_api(
-                prompt=prompt,
-                img_paths=[],  # Text-only call
-                video_name=video_name,
+                prompt=merge_prompt, img_paths=[], video_name=video_name, max_tokens=500,
+            )
+            return summary
+        except Exception as exc:
+            if self.debug:
+                self.logger.error(f"Summary merge failed: {exc}")
+                self.logger.error(traceback.format_exc())
+            return f"Summary generation failed: {exc}"
+
+    async def _generate_summary_single(
+        self,
+        rle_text: str,
+        prior_summary: str,
+        pass_type: str,
+        pass_num: int,
+        video_name: Optional[str],
+    ) -> str:
+        """Generate a summary from a single RLE sequence that fits in one call."""
+        if pass_type == "primitive":
+            context = f"## Pass {pass_num} Primitive States (RLE sequence):\n{rle_text}"
+            if prior_summary:
+                context = f"## Prior Pass Summary:\n{prior_summary}\n\n{context}"
+            prompt = PRIMITIVE_SUMMARY_PROMPT.format(states=context)
+        else:
+            primitive_passes = [p for p in self._pass_summaries.keys() if p % 2 == 1]
+            latest_primitive_pass = max(primitive_passes) if primitive_passes else None
+            primitive_summary = self._pass_summaries.get(
+                latest_primitive_pass, "No primitive summary"
+            ) if latest_primitive_pass else "No primitive summary"
+
+            context = f"## Pass {pass_num} Hidden Intents (RLE sequence):\n{rle_text}"
+            if prior_summary:
+                context = f"## Prior Pass Summary:\n{prior_summary}\n\n{context}"
+            prompt = INTENT_SUMMARY_PROMPT.format(
+                primitive_summary=primitive_summary,
+                intents=context,
+            )
+
+        try:
+            summary = await self._call_vision_api(
+                prompt=prompt, img_paths=[], video_name=video_name, max_tokens=500,
             )
             return summary
         except Exception as exc:
@@ -1026,23 +922,16 @@ class Retro(Observer):
             # Pass 1 primitives and refined primitives generate propositions
             if pass_type == "primitive":
                 prim = state_data.get("primitive_state", "unknown")
-                concurrent = state_data.get("concurrent_states", [])
                 conf = state_data.get("confidence", 5)
                 content = f"[{video_name or 'video'}] Primitive: {prim} (confidence: {conf})"
-                if concurrent:
-                    content += f" + concurrent: [{', '.join(concurrent)}]"
 
                 # Include intent context if available from prior pass
                 if pass_num > 2:
-                    # Get intent from previous pass for this frame
                     prior_intent_pass = pass_num - 1
                     if prior_intent_pass in self._pass_states and idx < len(self._pass_states[prior_intent_pass]):
                         prior_intent = self._pass_states[prior_intent_pass][idx].get("hidden_intent", "")
                         if prior_intent:
                             content += f" | Intent: {prior_intent}"
-                        prior_concurrent_intents = self._pass_states[prior_intent_pass][idx].get("concurrent_intents", [])
-                        if prior_concurrent_intents:
-                            content += f" + concurrent intents: [{', '.join(prior_concurrent_intents)}]"
 
                 await self.update_queue.put(
                     Update(content=content, content_type="input_text")
@@ -1071,13 +960,11 @@ class Retro(Observer):
             # Clear pass state for this video
             self._pass_states.clear()
             self._pass_summaries.clear()
-            self._meta_summary = ""
-            self._compacted_passes.clear()
 
             # Run all passes for this video
             for pass_num in range(1, self.num_passes + 1):
                 pass_type = get_pass_type(pass_num)
-                context_passes = get_context_passes(pass_num)
+                context_passes = get_context_passes(pass_num, self.pass_window_size)
 
                 self.logger.info(f"\n--- Pass {pass_num}/{self.num_passes} ({pass_type.upper()}) ---")
                 if context_passes:
@@ -1089,13 +976,9 @@ class Retro(Observer):
                 # States already saved per-frame in _process_single_pass
 
                 # Generate and save summary
-                summary = await self._generate_summary(states, video_name, pass_type)
+                summary = await self._generate_summary(states, video_name, pass_type, pass_num)
                 self._pass_summaries[pass_num] = summary
                 self._save_pass_output(video_name, "summary", {"summary": summary})
-
-                # Compact summaries that will be outside the next pass's context window
-                if pass_num < self.num_passes:
-                    await self._compact_dropped_summaries(pass_num + 1, video_name)
 
                 # Log pass statistics
                 if pass_type == "primitive":
@@ -1237,11 +1120,18 @@ class Retro(Observer):
         logger = logging.getLogger("Retro")
 
         if not logger.handlers:
+            fmt = logging.Formatter("%(asctime)s - [RETRO] - %(message)s")
             h = logging.StreamHandler()
-            h.setFormatter(
-                logging.Formatter("%(asctime)s - [RETRO] - %(message)s")
-            )
+            h.setFormatter(fmt)
             logger.addHandler(h)
+
+            # Persist logs to mounted volume so they survive container removal
+            log_dir = os.environ.get("GUM_TRAFFIC_LOG_DIR", "")
+            if log_dir:
+                os.makedirs(log_dir, exist_ok=True)
+                fh = logging.FileHandler(os.path.join(log_dir, "retro.log"))
+                fh.setFormatter(fmt)
+                logger.addHandler(fh)
 
         logger.setLevel(logging.INFO)
         logger.propagate = False
@@ -1265,14 +1155,19 @@ class Retro(Observer):
         logger.info(f"Running {self.num_passes} pass(es) (alternating primitive/intent)")
         logger.info(f"  - Odd passes (1,3,5): Primitive state extraction")
         logger.info(f"  - Even passes (2,4,6): Hidden intent inference")
-        logger.info(f"  - Temporal window: {self.temporal_window_size} frames")
-        logger.info(f"  - Context window: {self.context_window_size} unique states")
+        logger.info(f"  - Context window: {self.context_window_size} frames (±{self.context_window_size // 2})")
+        logger.info(f"  - Pass window: {self.pass_window_size} prior passes")
 
         # Run multi-pass analysis
-        await self._run_multi_pass(images)
-
-        logger.info(
-            f"Retro observer completed. Processed {total} images with "
-            f"{self.num_passes} passes (alternating primitive/intent)."
-        )
-        self.stopped.set()
+        try:
+            await self._run_multi_pass(images)
+            logger.info(
+                f"Retro observer completed. Processed {total} images with "
+                f"{self.num_passes} passes (alternating primitive/intent)."
+            )
+        except Exception as exc:
+            logger.error(f"Multi-pass analysis failed: {exc}")
+            logger.error(traceback.format_exc())
+            raise
+        finally:
+            self.stopped.set()
