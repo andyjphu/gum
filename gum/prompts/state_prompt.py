@@ -62,6 +62,29 @@ Examples of intent inference:
 - Primitives: [typing, looking_at_screen, drinking_coffee] → Intent: "working_on_computer_task"
 - Primitives: [walking, holding_phone, looking_around] → Intent: "navigating_to_destination"
 
+Your intent label should name the USER'S GOAL, not 
+narrate the scene. Every word in the label must be 
+necessary to distinguish this intent from other intents 
+in the video. 
+
+Ask yourself: if I removed a word, would the intent 
+become ambiguous? If not, that word is unnecessary.
+
+GOOD: "configuring_docker_environment" - every word 
+  distinguishes this from other coding activities
+GOOD: "evaluating_plating_presentation" - specific, 
+  each word earns its place
+BAD: "orchestrating cinematic culinary performance 
+  through stylized grill flare" - "orchestrating", 
+  "cinematic", "stylized" add atmosphere, not meaning
+BAD: "ritualistic technical stabilization through 
+  mindful dockerizing" - "ritualistic", "mindful", 
+  "symbolic grounding" describe nothing about the 
+  user's actual goal
+
+The label is a technical descriptor, not a caption.
+
+
 Output JSON with:
 - hidden_intent: The primary inferred goal/purpose (e.g., "commuting_to_work", "preparing_meal")
 - supporting_primitives: List of primitive states that support this inference
@@ -130,6 +153,28 @@ Refinement guidelines:
    - Prior intent "going_to_work" + later "entering_gym" → revise to "going_to_gym"
 3. ELEVATE: Discover higher-level patterns
    - Sequence of [grocery_shopping, cooking, eating] → "preparing_and_having_meal"
+
+Your intent label should name the USER'S GOAL, not 
+narrate the scene. Every word in the label must be 
+necessary to distinguish this intent from other intents 
+in the video. 
+
+Ask yourself: if I removed a word, would the intent 
+become ambiguous? If not, that word is unnecessary.
+
+GOOD: "configuring_docker_environment" - every word 
+  distinguishes this from other coding activities
+GOOD: "evaluating_plating_presentation" - specific, 
+  each word earns its place
+BAD: "orchestrating cinematic culinary performance 
+  through stylized grill flare" - "orchestrating", 
+  "cinematic", "stylized" add atmosphere, not meaning
+BAD: "ritualistic technical stabilization through 
+  mindful dockerizing" - "ritualistic", "mindful", 
+  "symbolic grounding" describe nothing about the 
+  user's actual goal
+
+The label is a technical descriptor, not a caption.
 
 Output JSON with:
 - hidden_intent: Refined inferred intent
