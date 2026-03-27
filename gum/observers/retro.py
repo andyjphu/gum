@@ -25,7 +25,6 @@ from ..schemas import (
     HiddenIntentSchema,
     RefinedPrimitiveSchema,
     RefinedIntentSchema,
-    GoalHypothesisSchema,
     get_schema,
 )
 from ..invoke import invoke
@@ -38,10 +37,6 @@ from ..config import (
     PASS_OUTPUT_DIR,
     SHARED_DIR,
     TRAFFIC_LOG_DIR,
-)
-from gum.prompts.goal_prompt import (
-    GOAL_HYPOTHESIS_PROMPT,
-    build_goal_context,
 )
 from gum.prompts.state_prompt import (
     PRIMITIVE_STATE_PROMPT,
@@ -437,40 +432,47 @@ class Retro(Observer):
         """Extract primitive (observable) state from a single image (Pass 1)."""
         prompt = PRIMITIVE_STATE_PROMPT
 
-        try:
-            result = await self._call_vision_api(
-                prompt=prompt,
-                img_paths=[img_path],
-                video_name=video_name,
-                response_format=get_schema(PrimitiveStateSchema.model_json_schema()),
-            )
+        max_retries = 3
+        last_exc = None
+        for attempt in range(max_retries):
+            try:
+                result = await self._call_vision_api(
+                    prompt=prompt,
+                    img_paths=[img_path],
+                    video_name=video_name,
+                    response_format=get_schema(PrimitiveStateSchema.model_json_schema()),
+                )
 
-            parsed = json.loads(result)
+                parsed = json.loads(result)
 
-            return {
-                "primitive_state": parsed.get("primitive_state", "unknown"),
-                "body_position": parsed.get("body_position"),
-                "objects_interacted": parsed.get("objects_interacted", []),
-                "confidence": parsed.get("confidence", 5),
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "primitive"
-            }
+                return {
+                    "primitive_state": parsed.get("primitive_state", "unknown"),
+                    "body_position": parsed.get("body_position"),
+                    "objects_interacted": parsed.get("objects_interacted", []),
+                    "confidence": parsed.get("confidence", 5),
+                    "image_path": img_path,
+                    "video_name": video_name,
+                    "pass": self._current_pass,
+                    "pass_type": "primitive"
+                }
 
-        except Exception as exc:
-            if self.debug:
-                self.logger.error(f"Primitive extraction failed: {exc}")
-                self.logger.error(traceback.format_exc())
-            return {
-                "primitive_state": "extraction_failed",
-                "confidence": 0,
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "primitive",
-                "error": str(exc)
-            }
+            except Exception as exc:
+                last_exc = exc
+                if attempt < max_retries - 1:
+                    self.logger.warning(f"Primitive extraction attempt {attempt + 1} failed, retrying: {exc}")
+                    continue
+                if self.debug:
+                    self.logger.error(f"Primitive extraction failed after {max_retries} attempts: {exc}")
+                    self.logger.error(traceback.format_exc())
+        return {
+            "primitive_state": "extraction_failed",
+            "confidence": 0,
+            "image_path": img_path,
+            "video_name": video_name,
+            "pass": self._current_pass,
+            "pass_type": "primitive",
+            "error": str(last_exc)
+        }
 
     # ─────────────────────────────── Pass 2: Hidden Intent Inference
 
@@ -497,40 +499,47 @@ class Retro(Observer):
             temporal_context=temporal_context,
         )
 
-        try:
-            result = await self._call_vision_api(
-                prompt=prompt,
-                img_paths=[img_path],
-                video_name=video_name,
-                response_format=get_schema(HiddenIntentSchema.model_json_schema()),
-            )
+        max_retries = 3
+        last_exc = None
+        for attempt in range(max_retries):
+            try:
+                result = await self._call_vision_api(
+                    prompt=prompt,
+                    img_paths=[img_path],
+                    video_name=video_name,
+                    response_format=get_schema(HiddenIntentSchema.model_json_schema()),
+                )
 
-            parsed = json.loads(result)
+                parsed = json.loads(result)
 
-            return {
-                "hidden_intent": parsed.get("hidden_intent", "unknown"),
-                "supporting_primitives": parsed.get("supporting_primitives", []),
-                "intent_confidence": parsed.get("intent_confidence", 5),
-                "alternative_intents": parsed.get("alternative_intents", []),
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "intent"
-            }
+                return {
+                    "hidden_intent": parsed.get("hidden_intent", "unknown"),
+                    "supporting_primitives": parsed.get("supporting_primitives", []),
+                    "intent_confidence": parsed.get("intent_confidence", 5),
+                    "alternative_intents": parsed.get("alternative_intents", []),
+                    "image_path": img_path,
+                    "video_name": video_name,
+                    "pass": self._current_pass,
+                    "pass_type": "intent"
+                }
 
-        except Exception as exc:
-            if self.debug:
-                self.logger.error(f"Intent inference failed: {exc}")
-                self.logger.error(traceback.format_exc())
-            return {
-                "hidden_intent": "inference_failed",
-                "intent_confidence": 0,
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "intent",
-                "error": str(exc)
-            }
+            except Exception as exc:
+                last_exc = exc
+                if attempt < max_retries - 1:
+                    self.logger.warning(f"Intent inference attempt {attempt + 1} failed, retrying: {exc}")
+                    continue
+                if self.debug:
+                    self.logger.error(f"Intent inference failed after {max_retries} attempts: {exc}")
+                    self.logger.error(traceback.format_exc())
+        return {
+            "hidden_intent": "inference_failed",
+            "intent_confidence": 0,
+            "image_path": img_path,
+            "video_name": video_name,
+            "pass": self._current_pass,
+            "pass_type": "intent",
+            "error": str(last_exc)
+        }
 
     # ─────────────────────────────── Pass 3+: Refined Primitive State
 
@@ -564,43 +573,50 @@ class Retro(Observer):
             temporal_context=temporal_context,
         )
 
-        try:
-            result = await self._call_vision_api(
-                prompt=prompt,
-                img_paths=[img_path],
-                video_name=video_name,
-                response_format=get_schema(RefinedPrimitiveSchema.model_json_schema()),
-            )
+        max_retries = 3
+        last_exc = None
+        for attempt in range(max_retries):
+            try:
+                result = await self._call_vision_api(
+                    prompt=prompt,
+                    img_paths=[img_path],
+                    video_name=video_name,
+                    response_format=get_schema(RefinedPrimitiveSchema.model_json_schema()),
+                )
 
-            parsed = json.loads(result)
+                parsed = json.loads(result)
 
-            return {
-                "primitive_state": parsed.get("primitive_state", "unknown"),
-                "body_position": parsed.get("body_position"),
-                "objects_interacted": parsed.get("objects_interacted", []),
-                "confidence": parsed.get("confidence", 5),
-                "refined_from": parsed.get("refined_from"),
-                "refinement_reason": parsed.get("refinement_reason"),
-                "informed_by_intent": parsed.get("informed_by_intent"),
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "primitive"
-            }
+                return {
+                    "primitive_state": parsed.get("primitive_state", "unknown"),
+                    "body_position": parsed.get("body_position"),
+                    "objects_interacted": parsed.get("objects_interacted", []),
+                    "confidence": parsed.get("confidence", 5),
+                    "refined_from": parsed.get("refined_from"),
+                    "refinement_reason": parsed.get("refinement_reason"),
+                    "informed_by_intent": parsed.get("informed_by_intent"),
+                    "image_path": img_path,
+                    "video_name": video_name,
+                    "pass": self._current_pass,
+                    "pass_type": "primitive"
+                }
 
-        except Exception as exc:
-            if self.debug:
-                self.logger.error(f"Primitive refinement failed: {exc}")
-                self.logger.error(traceback.format_exc())
-            return {
-                "primitive_state": "refinement_failed",
-                "confidence": 0,
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "primitive",
-                "error": str(exc)
-            }
+            except Exception as exc:
+                last_exc = exc
+                if attempt < max_retries - 1:
+                    self.logger.warning(f"Primitive refinement attempt {attempt + 1} failed, retrying: {exc}")
+                    continue
+                if self.debug:
+                    self.logger.error(f"Primitive refinement failed after {max_retries} attempts: {exc}")
+                    self.logger.error(traceback.format_exc())
+        return {
+            "primitive_state": "refinement_failed",
+            "confidence": 0,
+            "image_path": img_path,
+            "video_name": video_name,
+            "pass": self._current_pass,
+            "pass_type": "primitive",
+            "error": str(last_exc)
+        }
 
     # ─────────────────────────────── Pass 4+: Refined Hidden Intent
 
@@ -635,43 +651,50 @@ class Retro(Observer):
             temporal_context=temporal_context,
         )
 
-        try:
-            result = await self._call_vision_api(
-                prompt=prompt,
-                img_paths=[img_path],
-                video_name=video_name,
-                response_format=get_schema(RefinedIntentSchema.model_json_schema()),
-            )
+        max_retries = 3
+        last_exc = None
+        for attempt in range(max_retries):
+            try:
+                result = await self._call_vision_api(
+                    prompt=prompt,
+                    img_paths=[img_path],
+                    video_name=video_name,
+                    response_format=get_schema(RefinedIntentSchema.model_json_schema()),
+                )
 
-            parsed = json.loads(result)
+                parsed = json.loads(result)
 
-            return {
-                "hidden_intent": parsed.get("hidden_intent", "unknown"),
-                "supporting_primitives": parsed.get("supporting_primitives", []),
-                "intent_confidence": parsed.get("intent_confidence", 5),
-                "alternative_intents": parsed.get("alternative_intents", []),
-                "refined_from": parsed.get("refined_from"),
-                "refinement_reason": parsed.get("refinement_reason"),
-                "validated_by_outcome": parsed.get("validated_by_outcome"),
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "intent"
-            }
+                return {
+                    "hidden_intent": parsed.get("hidden_intent", "unknown"),
+                    "supporting_primitives": parsed.get("supporting_primitives", []),
+                    "intent_confidence": parsed.get("intent_confidence", 5),
+                    "alternative_intents": parsed.get("alternative_intents", []),
+                    "refined_from": parsed.get("refined_from"),
+                    "refinement_reason": parsed.get("refinement_reason"),
+                    "validated_by_outcome": parsed.get("validated_by_outcome"),
+                    "image_path": img_path,
+                    "video_name": video_name,
+                    "pass": self._current_pass,
+                    "pass_type": "intent"
+                }
 
-        except Exception as exc:
-            if self.debug:
-                self.logger.error(f"Intent refinement failed: {exc}")
-                self.logger.error(traceback.format_exc())
-            return {
-                "hidden_intent": "refinement_failed",
-                "intent_confidence": 0,
-                "image_path": img_path,
-                "video_name": video_name,
-                "pass": self._current_pass,
-                "pass_type": "intent",
-                "error": str(exc)
-            }
+            except Exception as exc:
+                last_exc = exc
+                if attempt < max_retries - 1:
+                    self.logger.warning(f"Intent refinement attempt {attempt + 1} failed, retrying: {exc}")
+                    continue
+                if self.debug:
+                    self.logger.error(f"Intent refinement failed after {max_retries} attempts: {exc}")
+                    self.logger.error(traceback.format_exc())
+        return {
+            "hidden_intent": "refinement_failed",
+            "intent_confidence": 0,
+            "image_path": img_path,
+            "video_name": video_name,
+            "pass": self._current_pass,
+            "pass_type": "intent",
+            "error": str(last_exc)
+        }
 
     # ─────────────────────────────── Summary generation
 
@@ -1002,14 +1025,11 @@ class Retro(Observer):
             self._save_provenance(video_name)
 
             # Compute and save metrics after all passes
-            metrics = self._save_metrics_and_viz(video_name)
-
-            # Generate goal hypotheses from aggregated data
-            await self._generate_goal_hypotheses(video_name, metrics)
+            self._save_metrics_and_viz(video_name)
 
     # ─────────────────────────────── Metrics and visualization
 
-    def _save_metrics_and_viz(self, video_name: Optional[str]) -> Dict[str, Any]:
+    def _save_metrics_and_viz(self, video_name: Optional[str]) -> None:
         """Compute and save metrics and visualization data after all passes."""
         video_folder = video_name or ""
         output_folder = self.output_dir / video_folder
@@ -1042,76 +1062,6 @@ class Retro(Observer):
             self.logger.info(
                 f"  Primitive-intent consistency: {metrics['alignment']['avg_primitive_consistency']}"
             )
-
-        return metrics
-
-    async def _generate_goal_hypotheses(
-        self,
-        video_name: Optional[str],
-        metrics: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
-        """Generate high-level goal hypotheses after all passes complete.
-
-        Uses aggregated metrics, state frequencies, transition patterns,
-        and other signals to hypothesize 5 emergent user goals.
-
-        Args:
-            video_name: Name of the video being processed
-            metrics: Output of compute_all_metrics()
-
-        Returns:
-            Parsed goal hypotheses dict, or None on failure
-        """
-        self.logger.info("Generating goal hypotheses...")
-
-        # Build prompt context from metrics and pass data
-        context = build_goal_context(
-            all_pass_states=self._pass_states,
-            all_pass_summaries=self._pass_summaries,
-            metrics=metrics,
-            video_name=video_name or "",
-        )
-
-        prompt = GOAL_HYPOTHESIS_PROMPT.format(**context)
-
-        try:
-            result = await self._call_vision_api(
-                prompt=prompt,
-                img_paths=[],  # Text-only call
-                video_name=video_name,
-                response_format=get_schema(GoalHypothesisSchema.model_json_schema()),
-            )
-
-            parsed = json.loads(result)
-
-            # Save to output directory
-            video_folder = video_name or ""
-            output_folder = self.output_dir / video_folder
-            output_folder.mkdir(parents=True, exist_ok=True)
-            goals_path = output_folder / "goal_hypotheses.json"
-            with open(goals_path, "w") as f:
-                json.dump(parsed, f, indent=2)
-            self.logger.info(f"Saved goal hypotheses to {goals_path}")
-
-            # Log summary
-            goals = parsed.get("goals", [])
-            for i, g in enumerate(goals):
-                self.logger.info(
-                    f"  Goal {i+1}: {g.get('goal', '?')[:80]}... "
-                    f"(confidence: {g.get('confidence', '?')}, "
-                    f"novelty: {g.get('novelty', '?')})"
-                )
-            meta = parsed.get("meta_observation", "")
-            if meta:
-                self.logger.info(f"  Meta: {meta[:120]}")
-
-            return parsed
-
-        except Exception as exc:
-            self.logger.error(f"Goal hypothesis generation failed: {exc}")
-            if self.debug:
-                self.logger.error(traceback.format_exc())
-            return None
 
     # ─────────────────────────────── Main worker
 
