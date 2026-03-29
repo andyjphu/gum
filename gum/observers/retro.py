@@ -1,6 +1,6 @@
 # Author: Andy Phu
 # Retroactive observer with multi-pass analysis for egocentric footage.
-# Odd passes extract primitives, even passes infer intents.
+# Odd passes extract activities, even passes infer intents.
 # Each pass sees the previous pass_window_size passes as context.
 
 from __future__ import annotations
@@ -39,9 +39,13 @@ from ..config import (
     TRAFFIC_LOG_DIR,
 )
 from gum.prompts.state_prompt import (
+    PRIMITIVE_STATE_SYSTEM,
     PRIMITIVE_STATE_PROMPT,
+    HIDDEN_INTENT_SYSTEM,
     HIDDEN_INTENT_PROMPT,
+    REFINED_PRIMITIVE_SYSTEM,
     REFINED_PRIMITIVE_PROMPT,
+    REFINED_INTENT_SYSTEM,
     REFINED_INTENT_PROMPT,
     PRIMITIVE_SUMMARY_PROMPT,
     INTENT_SUMMARY_PROMPT,
@@ -50,6 +54,7 @@ from gum.prompts.state_prompt import (
     build_temporal_context,
     build_multi_pass_context,
     _collapse_to_runs,
+    _pass_type_to_file_key,
 )
 from gum.metrics import (
     compute_all_metrics,
@@ -68,15 +73,15 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 ###############################################################################
-# Retro observer with multi-pass (alternating primitive/intent)               #
+# Retro observer with multi-pass (alternating activity/intent)                #
 ###############################################################################
 
 
 class Retro(Observer):
     """Observer that processes screenshots with multi-pass analysis.
 
-    Implements an alternating primitive/intent architecture:
-    - Odd passes (1, 3, 5): Extract/refine primitive (observable) states
+    Implements an alternating activity/intent architecture:
+    - Odd passes (1, 3, 5): Extract/refine activity (observable) states
     - Even passes (2, 4, 6): Infer/refine hidden intents
 
     Context window logic:
@@ -198,10 +203,11 @@ class Retro(Observer):
     def _save_single_state(self, video_name: Optional[str], state_data: Dict[str, Any]) -> None:
         """Save a single state entry to its timestamp folder immediately.
 
-        Layout: data/passes/{video}/{timestamp}/states_{pass_type}_P{N}.json
+        Layout: data/passes/{video}/{timestamp}/states_{file_key}_P{N}.json
         """
         suffix = self._get_pass_suffix()
         pass_type = self._get_pass_type_str()
+        file_key = _pass_type_to_file_key(pass_type)
         video_folder = video_name or ""
         output_folder = self.output_dir / video_folder
 
@@ -212,7 +218,7 @@ class Retro(Observer):
         ts_dir = output_folder / ts_key
         ts_dir.mkdir(parents=True, exist_ok=True)
 
-        filename = f"states_{pass_type}{suffix}.json"
+        filename = f"states_{file_key}{suffix}.json"
         ts_file = ts_dir / filename
         with open(ts_file, "w") as f:
             json.dump(state_data, f, indent=2, default=str)
@@ -220,17 +226,18 @@ class Retro(Observer):
     def _save_pass_output(self, video_name: Optional[str], data_type: str, data: Any) -> Path:
         """Save non-state pass output (summaries, etc).
 
-        Layout: data/passes/{video}/{data_type}/{data_type}_{pass_type}_P{N}.json
+        Layout: data/passes/{video}/{data_type}/{data_type}_{file_key}_P{N}.json
         """
         suffix = self._get_pass_suffix()
         pass_type = self._get_pass_type_str()
+        file_key = _pass_type_to_file_key(pass_type)
         video_folder = video_name or ""
         output_folder = self.output_dir / video_folder
 
         sub_dir = output_folder / data_type
         sub_dir.mkdir(parents=True, exist_ok=True)
 
-        filename = f"{data_type}_{pass_type}{suffix}.json"
+        filename = f"{data_type}_{file_key}{suffix}.json"
         filepath = sub_dir / filename
         with open(filepath, "w") as f:
             json.dump(data, f, indent=2, default=str)
@@ -287,9 +294,9 @@ class Retro(Observer):
             ts_dir.mkdir(parents=True, exist_ok=True)
 
             passes_data = timestamps[ts]
-            # Determine final state (highest primitive pass)
-            primitive_passes = [p for p in passes_data.keys() if passes_data[p]["type"] == "primitive"]
-            final_pass = max(primitive_passes) if primitive_passes else max(passes_data.keys())
+            # Determine final state (highest activity pass)
+            activity_passes = [p for p in passes_data.keys() if passes_data[p]["type"] == "activity"]
+            final_pass = max(activity_passes) if activity_passes else max(passes_data.keys())
             final_state = passes_data[final_pass]["state"]
 
             # Determine transition from previous frame
@@ -297,9 +304,9 @@ class Retro(Observer):
             if i > 0:
                 prev_ts = sorted_timestamps[i - 1]
                 prev_passes = timestamps.get(prev_ts, {})
-                prev_primitive_passes = [p for p in prev_passes.keys() if prev_passes[p]["type"] == "primitive"]
-                if prev_primitive_passes:
-                    prev_final_pass = max(prev_primitive_passes)
+                prev_activity_passes = [p for p in prev_passes.keys() if prev_passes[p]["type"] == "activity"]
+                if prev_activity_passes:
+                    prev_final_pass = max(prev_activity_passes)
                     prev_state = prev_passes[prev_final_pass]["state"]
                     if final_state != prev_state:
                         # Get intent from current frame's highest intent pass as trigger
@@ -336,8 +343,14 @@ class Retro(Observer):
         video_name: Optional[str] = None,
         response_format: Optional[dict] = None,
         max_tokens: Optional[int] = None,
+        system_prompt: Optional[str] = None,
     ) -> str:
-        """Call GPT Vision API to analyze images."""
+        """Call GPT Vision API to analyze images.
+
+        When system_prompt is provided, instructions go in the system role
+        and prompt + images go in the user role. This helps the model
+        distinguish task instructions from context data.
+        """
         content = []
 
         # Only encode images if we have any
@@ -363,13 +376,18 @@ class Retro(Observer):
         pass_type = self._get_pass_type_str()
         debug_tag = f"[Retro{pass_suffix}:{pass_type}]"
 
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": content})
+
         extra_kwargs = {}
         if max_tokens is not None:
             extra_kwargs["max_tokens"] = max_tokens
 
         rsp = await invoke(
             model=self.model_name,
-            messages=[{"role": "user", "content": content}],
+            messages=messages,
             response_format=response_format or {"type": "text"},
             debug_tag=debug_tag,
             debug_img_paths=img_paths,
@@ -422,25 +440,24 @@ class Retro(Observer):
         except OSError as exc:
             self.logger.error(f"Failed to write hard cap log: {exc}")
 
-    # ─────────────────────────────── Pass 1: Primitive State Extraction
+    # ─────────────────────────────── Pass 1: Activity State Extraction
 
-    async def _extract_primitive_pass1(
+    async def _extract_activity_pass1(
         self,
         img_path: str,
         video_name: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Extract primitive (observable) state from a single image (Pass 1)."""
-        prompt = PRIMITIVE_STATE_PROMPT
-
+        """Extract activity (observable) state from a single image (Pass 1)."""
         max_retries = 3
         last_exc = None
         for attempt in range(max_retries):
             try:
                 result = await self._call_vision_api(
-                    prompt=prompt,
+                    prompt=PRIMITIVE_STATE_PROMPT,
                     img_paths=[img_path],
                     video_name=video_name,
                     response_format=get_schema(PrimitiveStateSchema.model_json_schema()),
+                    system_prompt=PRIMITIVE_STATE_SYSTEM,
                 )
 
                 parsed = json.loads(result)
@@ -453,16 +470,16 @@ class Retro(Observer):
                     "image_path": img_path,
                     "video_name": video_name,
                     "pass": self._current_pass,
-                    "pass_type": "primitive"
+                    "pass_type": "activity"
                 }
 
             except Exception as exc:
                 last_exc = exc
                 if attempt < max_retries - 1:
-                    self.logger.warning(f"Primitive extraction attempt {attempt + 1} failed, retrying: {exc}")
+                    self.logger.warning(f"Activity extraction attempt {attempt + 1} failed, retrying: {exc}")
                     continue
                 if self.debug:
-                    self.logger.error(f"Primitive extraction failed after {max_retries} attempts: {exc}")
+                    self.logger.error(f"Activity extraction failed after {max_retries} attempts: {exc}")
                     self.logger.error(traceback.format_exc())
         return {
             "primitive_state": "extraction_failed",
@@ -470,7 +487,7 @@ class Retro(Observer):
             "image_path": img_path,
             "video_name": video_name,
             "pass": self._current_pass,
-            "pass_type": "primitive",
+            "pass_type": "activity",
             "error": str(last_exc)
         }
 
@@ -483,7 +500,7 @@ class Retro(Observer):
         total_frames: int,
         video_name: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Infer hidden intent from primitive states (Pass 2)."""
+        """Infer hidden intent from activity states (Pass 2)."""
         prior_summary = self._pass_summaries.get(1, "No prior summary available.")
 
         temporal_context = build_temporal_context(
@@ -508,6 +525,7 @@ class Retro(Observer):
                     img_paths=[img_path],
                     video_name=video_name,
                     response_format=get_schema(HiddenIntentSchema.model_json_schema()),
+                    system_prompt=HIDDEN_INTENT_SYSTEM,
                 )
 
                 parsed = json.loads(result)
@@ -541,16 +559,16 @@ class Retro(Observer):
             "error": str(last_exc)
         }
 
-    # ─────────────────────────────── Pass 3+: Refined Primitive State
+    # ─────────────────────────────── Pass 3+: Refined Activity State
 
-    async def _refine_primitive(
+    async def _refine_activity(
         self,
         img_path: str,
         frame_idx: int,
         total_frames: int,
         video_name: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Refine primitive state with context from prior passes (Pass 3, 5, ...)."""
+        """Refine activity state with context from prior passes (Pass 3, 5, ...)."""
         context_passes = get_context_passes(self._current_pass, self.pass_window_size)
 
         prior_context = build_multi_pass_context(
@@ -568,7 +586,16 @@ class Retro(Observer):
             self.context_window_size,
         )
 
+        same_type_prior = self._current_pass - 2
+        prior_label = "unknown"
+        if same_type_prior >= 1 and same_type_prior in self._pass_states:
+            if frame_idx < len(self._pass_states[same_type_prior]):
+                prior_label = self._pass_states[same_type_prior][frame_idx].get(
+                    "primitive_state", "unknown"
+                )
+
         prompt = REFINED_PRIMITIVE_PROMPT.format(
+            prior_label=prior_label,
             prior_context=prior_context,
             temporal_context=temporal_context,
         )
@@ -582,6 +609,7 @@ class Retro(Observer):
                     img_paths=[img_path],
                     video_name=video_name,
                     response_format=get_schema(RefinedPrimitiveSchema.model_json_schema()),
+                    system_prompt=REFINED_PRIMITIVE_SYSTEM,
                 )
 
                 parsed = json.loads(result)
@@ -597,16 +625,16 @@ class Retro(Observer):
                     "image_path": img_path,
                     "video_name": video_name,
                     "pass": self._current_pass,
-                    "pass_type": "primitive"
+                    "pass_type": "activity"
                 }
 
             except Exception as exc:
                 last_exc = exc
                 if attempt < max_retries - 1:
-                    self.logger.warning(f"Primitive refinement attempt {attempt + 1} failed, retrying: {exc}")
+                    self.logger.warning(f"Activity refinement attempt {attempt + 1} failed, retrying: {exc}")
                     continue
                 if self.debug:
-                    self.logger.error(f"Primitive refinement failed after {max_retries} attempts: {exc}")
+                    self.logger.error(f"Activity refinement failed after {max_retries} attempts: {exc}")
                     self.logger.error(traceback.format_exc())
         return {
             "primitive_state": "refinement_failed",
@@ -614,7 +642,7 @@ class Retro(Observer):
             "image_path": img_path,
             "video_name": video_name,
             "pass": self._current_pass,
-            "pass_type": "primitive",
+            "pass_type": "activity",
             "error": str(last_exc)
         }
 
@@ -645,8 +673,17 @@ class Retro(Observer):
             self.context_window_size,
         )
 
+        same_type_prior = self._current_pass - 2
+        prior_label = "unknown"
+        if same_type_prior >= 1 and same_type_prior in self._pass_states:
+            if frame_idx < len(self._pass_states[same_type_prior]):
+                prior_label = self._pass_states[same_type_prior][frame_idx].get(
+                    "hidden_intent", "unknown"
+                )
+
         prompt = REFINED_INTENT_PROMPT.format(
             context_passes=", ".join(str(p) for p in context_passes),
+            prior_label=prior_label,
             prior_context=prior_context,
             temporal_context=temporal_context,
         )
@@ -660,6 +697,7 @@ class Retro(Observer):
                     img_paths=[img_path],
                     video_name=video_name,
                     response_format=get_schema(RefinedIntentSchema.model_json_schema()),
+                    system_prompt=REFINED_INTENT_SYSTEM,
                 )
 
                 parsed = json.loads(result)
@@ -781,7 +819,8 @@ class Retro(Observer):
 
         runs = _collapse_to_runs(states, 0, len(states), pass_type)
         rle_lines = [run.format_line() for run in runs]
-        rle_text = "\n".join(rle_lines) if rle_lines else f"No {pass_type}s extracted"
+        type_label = "activities" if pass_type == "activity" else "intents"
+        rle_text = "\n".join(rle_lines) if rle_lines else f"No {type_label} extracted"
 
         prior_pass = pass_num - 1
         prior_summary = self._pass_summaries.get(prior_pass, "")
@@ -803,7 +842,7 @@ class Retro(Observer):
             )
 
         chunk_template = (
-            CHUNK_PRIMITIVE_SUMMARY_PROMPT if pass_type == "primitive"
+            CHUNK_PRIMITIVE_SUMMARY_PROMPT if pass_type == "activity"
             else CHUNK_INTENT_SUMMARY_PROMPT
         )
 
@@ -855,23 +894,23 @@ class Retro(Observer):
         video_name: Optional[str],
     ) -> str:
         """Generate a summary from a single RLE sequence that fits in one call."""
-        if pass_type == "primitive":
-            context = f"## Pass {pass_num} Primitive States (RLE sequence):\n{rle_text}"
+        if pass_type == "activity":
+            context = f"## Pass {pass_num} Activity States (RLE sequence):\n{rle_text}"
             if prior_summary:
                 context = f"## Prior Pass Summary:\n{prior_summary}\n\n{context}"
             prompt = PRIMITIVE_SUMMARY_PROMPT.format(states=context)
         else:
-            primitive_passes = [p for p in self._pass_summaries.keys() if p % 2 == 1]
-            latest_primitive_pass = max(primitive_passes) if primitive_passes else None
-            primitive_summary = self._pass_summaries.get(
-                latest_primitive_pass, "No primitive summary"
-            ) if latest_primitive_pass else "No primitive summary"
+            activity_passes = [p for p in self._pass_summaries.keys() if p % 2 == 1]
+            latest_activity_pass = max(activity_passes) if activity_passes else None
+            activity_summary = self._pass_summaries.get(
+                latest_activity_pass, "No activity summary"
+            ) if latest_activity_pass else "No activity summary"
 
             context = f"## Pass {pass_num} Hidden Intents (RLE sequence):\n{rle_text}"
             if prior_summary:
                 context = f"## Prior Pass Summary:\n{prior_summary}\n\n{context}"
             prompt = INTENT_SUMMARY_PROMPT.format(
-                primitive_summary=primitive_summary,
+                primitive_summary=activity_summary,
                 intents=context,
             )
 
@@ -918,16 +957,16 @@ class Retro(Observer):
 
             # Route to appropriate extraction method based on pass
             if pass_num == 1:
-                # Pass 1: Raw primitive extraction
-                state_data = await self._extract_primitive_pass1(str(img_path), video_name)
+                # Pass 1: Raw activity extraction
+                state_data = await self._extract_activity_pass1(str(img_path), video_name)
             elif pass_num == 2:
                 # Pass 2: Initial intent inference
                 state_data = await self._infer_intent_pass2(
                     str(img_path), idx, total, video_name
                 )
-            elif pass_type == "primitive":
-                # Pass 3, 5, ...: Refined primitive
-                state_data = await self._refine_primitive(
+            elif pass_type == "activity":
+                # Pass 3, 5, ...: Refined activity
+                state_data = await self._refine_activity(
                     str(img_path), idx, total, video_name
                 )
             else:
@@ -942,11 +981,11 @@ class Retro(Observer):
             self._save_single_state(video_name, state_data)
 
             # Emit update to gum pipeline
-            # Pass 1 primitives and refined primitives generate propositions
-            if pass_type == "primitive":
-                prim = state_data.get("primitive_state", "unknown")
+            # Activity passes (odd passes) generate propositions
+            if pass_type == "activity":
+                activity = state_data.get("primitive_state", "unknown")
                 conf = state_data.get("confidence", 5)
-                content = f"[{video_name or 'video'}] Primitive: {prim} (confidence: {conf})"
+                content = f"[{video_name or 'video'}] Activity: {activity} (confidence: {conf})"
 
                 # Include intent context if available from prior pass
                 if pass_num > 2:
@@ -1004,12 +1043,12 @@ class Retro(Observer):
                 self._save_pass_output(video_name, "summary", {"summary": summary})
 
                 # Log pass statistics
-                if pass_type == "primitive":
+                if pass_type == "activity":
                     unique_states = set(s.get("primitive_state", "unknown") for s in states)
                     refined_count = sum(1 for s in states if s.get("refined_from"))
                     self.logger.info(
                         f"Pass {pass_num} complete: {len(states)} frames, "
-                        f"{len(unique_states)} unique primitives"
+                        f"{len(unique_states)} unique activities"
                     )
                     if pass_num > 1:
                         self.logger.info(f"  Refined: {refined_count} states")
@@ -1050,17 +1089,17 @@ class Retro(Observer):
         self.logger.info(f"Saved visualization data to {viz_path}")
 
         # Log key metrics
-        if "convergence" in metrics and "avg_primitive_stability" in metrics["convergence"]:
+        if "convergence" in metrics and "avg_activity_stability" in metrics["convergence"]:
             self.logger.info(
-                f"  Primitive stability: {metrics['convergence']['avg_primitive_stability']}"
+                f"  Activity stability: {metrics['convergence']['avg_activity_stability']}"
             )
         if "convergence" in metrics and "avg_intent_stability" in metrics["convergence"]:
             self.logger.info(
                 f"  Intent stability: {metrics['convergence']['avg_intent_stability']}"
             )
-        if "alignment" in metrics and "avg_primitive_consistency" in metrics["alignment"]:
+        if "alignment" in metrics and "avg_activity_consistency" in metrics["alignment"]:
             self.logger.info(
-                f"  Primitive-intent consistency: {metrics['alignment']['avg_primitive_consistency']}"
+                f"  Activity-intent consistency: {metrics['alignment']['avg_activity_consistency']}"
             )
 
     # ─────────────────────────────── Main worker
@@ -1102,8 +1141,8 @@ class Retro(Observer):
         else:
             logger.info(f"Found {total} images to process")
 
-        logger.info(f"Running {self.num_passes} pass(es) (alternating primitive/intent)")
-        logger.info(f"  - Odd passes (1,3,5): Primitive state extraction")
+        logger.info(f"Running {self.num_passes} pass(es) (alternating activity/intent)")
+        logger.info(f"  - Odd passes (1,3,5): Activity state extraction")
         logger.info(f"  - Even passes (2,4,6): Hidden intent inference")
         logger.info(f"  - Context window: {self.context_window_size} frames (±{self.context_window_size // 2})")
         logger.info(f"  - Pass window: {self.pass_window_size} prior passes")
@@ -1113,7 +1152,7 @@ class Retro(Observer):
             await self._run_multi_pass(images)
             logger.info(
                 f"Retro observer completed. Processed {total} images with "
-                f"{self.num_passes} passes (alternating primitive/intent)."
+                f"{self.num_passes} passes (alternating activity/intent)."
             )
         except Exception as exc:
             logger.error(f"Multi-pass analysis failed: {exc}")

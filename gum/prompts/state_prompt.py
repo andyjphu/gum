@@ -1,234 +1,161 @@
 # state_prompt.py
 # Prompts for egocentric footage state extraction and multi-pass refinement.
-# Odd passes extract primitives, even passes infer intents.
+# Odd passes extract activities (observable actions), even passes infer intents.
 # Each pass sees the previous pass_window_size passes as context.
 
 from dataclasses import dataclass
 from typing import List, Dict, Any
 
 
-# Pass 1: primitive state extraction (odd passes start here)
-PRIMITIVE_STATE_PROMPT = """You are analyzing egocentric (first-person) footage to extract the user's OBSERVABLE behavioral state.
+# Pass 1: activity state extraction (odd passes start here)
+PRIMITIVE_STATE_SYSTEM = """You extract observable activities from egocentric footage. Output a lowercase_snake_case label describing what the user is physically doing.
 
-Focus ONLY on what is directly visible/observable - physical actions, body position, and object interactions.
-Do NOT infer intent or purpose at this stage.
+Focus ONLY on what is directly visible. Do NOT infer intent or purpose.
 
-Given the image(s), identify:
-1. The PRIMARY physical action (e.g., walking, typing, reaching, pointing)
-2. Body position if visible (standing, sitting, leaning, etc.)
-3. Objects being interacted with (phone, keyboard, door, etc.)
+Identify the user's observable activity from:
+1. Physical actions and body position (e.g., walking, typing, sitting)
+2. Object interactions (e.g., phone, keyboard, tools)
+3. Screen content — if the frame shows a screen without visible hands/body, describe what is on screen (e.g., "viewing_code", "browsing_web")
 
-Examples of primitive states:
-- "walking" (NOT "walking to the store")
+Examples:
 - "typing_on_keyboard" (NOT "writing an email")
-- "holding_phone_to_ear" (NOT "making a phone call")
-- "reaching_for_shelf" (NOT "getting groceries")
-- "looking_at_screen" (NOT "reading news")
+- "scrolling_through_code" (NOT "looking for a bug")
+- "positioning_component_on_workbench" (NOT "repairing the device")
+- "unclear" ONLY when the frame is a title card, logo, or truly uninterpretable
 
 Guidelines:
 1. Use lowercase with underscores
 2. Describe WHAT is happening, not WHY
-3. Be specific about the action (e.g., "typing" vs "tapping" vs "swiping")
-4. The primary state should be the DOMINANT activity receiving the most attention
-5. If unclear, use "unclear" or "transitioning"
+3. The label should be the DOMINANT activity receiving the most attention
+4. Use "unclear" only as a last resort
 
-Output JSON with:
-- primitive_state: The dominant observable action string
-- body_position: Body posture if visible (null if not visible)
-- objects_interacted: List of objects being interacted with (empty list if none)
-- confidence: 1-10 score (10 = clearly visible, 1 = obscured/uncertain)
-"""
+Confidence scale: 1-3 = occluded/ambiguous. 4-6 = visible but multiple descriptions possible. 7-8 = clear with minor ambiguity. 9-10 = only one reasonable description.
+
+Respond with the requested JSON fields."""
+
+PRIMITIVE_STATE_PROMPT = """Analyze this frame and extract the observable activity."""
 
 # Pass 2: hidden intent inference (even passes start here)
-HIDDEN_INTENT_PROMPT = """You are inferring the user's HIDDEN INTENT from observed primitive states in egocentric footage.
+HIDDEN_INTENT_SYSTEM = """You infer the user's goal from observed activities in egocentric footage. Output a lowercase_snake_case label describing the user's purpose.
 
-## Context from Prior Pass (Primitive States):
-{prior_summary}
-
-## Temporally Nearest Frames' Primitive States:
-{temporal_context}
-
-## Current Frame Analysis:
-Given the primitive states observed in this sequence, infer what the user is trying to accomplish.
-
-Intent inference guidelines:
-1. Look for PATTERNS across multiple primitive states
+Guidelines:
+1. Look for PATTERNS across multiple observed activities
 2. Consider the SEQUENCE of actions (what comes before/after)
 3. Think about common GOALS that would explain the observed actions
-4. Assign lower confidence to speculative intents
+4. Assign lower confidence to speculative inferences
 
-Examples of intent inference:
-- Primitives: [walking, holding_bag, looking_at_list] → Intent: "grocery_shopping"
-- Primitives: [typing, looking_at_screen, drinking_coffee] → Intent: "working_on_computer_task"
-- Primitives: [walking, holding_phone, looking_around] → Intent: "navigating_to_destination"
+Examples:
+- Activities: [typing, looking_at_screen, drinking_coffee] → "working_on_computer_task"
+- Activities: [walking, holding_bag, looking_at_list] → "grocery_shopping"
+- Activities: [typing, pausing, typing, deleting] → "editing_text" (could also be "debugging_code" — note alternatives)
 
-Your intent label should name the USER'S GOAL, not 
-narrate the scene. Every word in the label must be 
-necessary to distinguish this intent from other intents 
-in the video. 
+The label names the USER'S GOAL, not a narration.
+GOOD: "configuring_docker_environment"
+BORDERLINE BAD: "debugging_tic_tac_toe_win_condition_logic" — too specific, use "debugging_game_logic"
+BAD: "personalizing_nighttime_driving_environment_through_interior_lighting" — caption, not intent. Use "adjusting_car_settings"
 
-Ask yourself: if I removed a word, would the intent 
-become ambiguous? If not, that word is unnecessary.
+If uncertain, choose the most likely interpretation with low confidence and list alternatives.
 
-GOOD: "configuring_docker_environment" - every word 
-  distinguishes this from other coding activities
-GOOD: "evaluating_plating_presentation" - specific, 
-  each word earns its place
-BAD: "orchestrating cinematic culinary performance 
-  through stylized grill flare" - "orchestrating", 
-  "cinematic", "stylized" add atmosphere, not meaning
-BAD: "ritualistic technical stabilization through 
-  mindful dockerizing" - "ritualistic", "mindful", 
-  "symbolic grounding" describe nothing about the 
-  user's actual goal
+Confidence scale: 1-3 = highly speculative. 4-6 = reasonable but other interpretations possible. 7-8 = well-supported. 9-10 = only one plausible intent.
 
-The label is a technical descriptor, not a caption.
+Respond with the requested JSON fields."""
 
+HIDDEN_INTENT_PROMPT = """Context from prior observations:
+{prior_summary}
 
-Output JSON with:
-- hidden_intent: The primary inferred goal/purpose (e.g., "commuting_to_work", "preparing_meal")
-- supporting_primitives: List of primitive states that support this inference
-- intent_confidence: 1-10 (1=highly speculative, 10=near certain)
-- alternative_intents: Other possible intents if ambiguous (can be empty)
-"""
-
-# Pass 3+: refined primitive state (odd passes after pass 1)
-REFINED_PRIMITIVE_PROMPT = """You are RE-ANALYZING egocentric footage to extract REFINED primitive states.
-
-You now have context from prior passes including both primitive states AND hidden intents.
-Use this context to:
-1. Be more precise in labeling the primitive state
-2. Collapse semantically equivalent primitives (e.g., "walking_slowly" + "strolling" → "walking")
-3. Distinguish primitives that LOOKED similar but serve different intents
-
-## Prior Context:
-{prior_context}
-
-## Temporal Context:
+Nearby frames:
 {temporal_context}
 
-## Current Image(s):
-Re-analyze with the enriched context above.
+Analyze this frame and infer the user's goal."""
 
-Refinement guidelines:
-1. If the hidden intent suggests a more specific primitive, use it
-   - Generic "typing" + intent "coding" → refined to "typing_code"
-2. Collapse synonymous primitives to canonical forms
-   - "strolling", "walking_slowly", "ambling" → "walking"
-3. Split primitives that serve different intents
-   - "looking_at_phone" for navigation vs entertainment should remain distinct if intent differs
+# Pass 3+: refined activity state (odd passes after pass 1)
+REFINED_PRIMITIVE_SYSTEM = """You verify or correct activity labels on egocentric footage. Output a lowercase_snake_case label describing an observable activity.
 
-Output JSON with:
-- primitive_state: Refined observable action
-- body_position: Body posture if visible
-- objects_interacted: List of objects
-- confidence: 1-10 score
-- refined_from: Original primitive if changed (null if unchanged)
-- refinement_reason: Why refined (null if unchanged)
-- informed_by_intent: Which intent informed this refinement (null if N/A)
-"""
+Set "changed" to true ONLY if:
+1. WRONG: The prior label is factually incorrect for what is visible.
+2. SYNONYM: The prior label duplicates another label in this video — use the canonical form.
+3. UNDERSPECIFIED: The prior label is "unclear" but the frame has enough information for a real label.
+
+If the prior label is already specific and correct, return it unchanged with changed=false.
+
+The label must describe an observable activity. Never output metadata, section headers, or pass numbers as labels.
+
+Example — keeping a good label:
+  {{"changed": false, "primitive_state": "sitting", "confidence": 8}}
+Example — fixing a wrong label:
+  {{"changed": true, "primitive_state": "viewing_code", "confidence": 7, "refined_from": "unclear", "refinement_reason": "screen shows code editor"}}
+
+Confidence scale: 1-3 = occluded/ambiguous. 4-6 = visible but multiple descriptions possible. 7-8 = clear with minor ambiguity. 9-10 = only one reasonable description.
+
+Respond with the requested JSON fields."""
+
+REFINED_PRIMITIVE_PROMPT = """Prior label: {prior_label}
+
+Prior context:
+{prior_context}
+
+Nearby frames:
+{temporal_context}
+
+Verify or correct the prior label for this frame."""
 
 # Pass 4+: refined hidden intent (even passes after pass 2)
-REFINED_INTENT_PROMPT = """You are RE-ANALYZING to infer REFINED hidden intents with broader context.
+REFINED_INTENT_SYSTEM = """You verify or correct intent labels on egocentric footage. Output a lowercase_snake_case label describing the user's goal.
 
-You now have multiple passes of both primitives AND intents.
-Use this to:
-1. Validate or invalidate prior intent inferences
-2. Discover higher-level intents (intent hierarchies)
-3. Increase or decrease confidence based on subsequent observations
+Set "changed" to true ONLY if:
+1. WRONG: Subsequent frames reveal the prior intent was incorrect. Name the general goal, not implementation details.
+2. SYNONYM: The prior intent duplicates another label in this video — use the canonical form.
+3. UNDERSPECIFIED: The prior intent is "unclear" but context provides enough information for a real label.
 
-## Prior Context (Passes {context_passes}):
+If the prior intent is already specific and correct, return it unchanged with changed=false.
+
+The label must describe a user goal. Never output metadata, section headers, or pass numbers as labels.
+
+Example — keeping a good label:
+  {{"changed": false, "hidden_intent": "preparing_cocktail", "intent_confidence": 8}}
+Example — fixing a wrong label:
+  {{"changed": true, "hidden_intent": "writing_code", "intent_confidence": 7, "refined_from": "unclear", "refinement_reason": "context indicates coding activity"}}
+
+Confidence scale: 1-3 = highly speculative. 4-6 = reasonable but other interpretations possible. 7-8 = well-supported. 9-10 = only one plausible intent.
+
+Respond with the requested JSON fields."""
+
+REFINED_INTENT_PROMPT = """Prior label: {prior_label}
+
+Prior context (passes {context_passes}):
 {prior_context}
 
-## Temporal Context:
+Nearby frames:
 {temporal_context}
 
-## Current Frame:
-Re-analyze the intent with enriched context.
-
-Refinement guidelines:
-1. VALIDATE: If subsequent primitives confirm the intent, increase confidence
-   - Prior intent "going_to_grocery_store" + later "picking_items_from_shelf" → validated
-2. INVALIDATE: If subsequent primitives contradict, revise the intent
-   - Prior intent "going_to_work" + later "entering_gym" → revise to "going_to_gym"
-3. ELEVATE: Discover higher-level patterns
-   - Sequence of [grocery_shopping, cooking, eating] → "preparing_and_having_meal"
-
-Your intent label should name the USER'S GOAL, not 
-narrate the scene. Every word in the label must be 
-necessary to distinguish this intent from other intents 
-in the video. 
-
-Ask yourself: if I removed a word, would the intent 
-become ambiguous? If not, that word is unnecessary.
-
-GOOD: "configuring_docker_environment" - every word 
-  distinguishes this from other coding activities
-GOOD: "evaluating_plating_presentation" - specific, 
-  each word earns its place
-BAD: "orchestrating cinematic culinary performance 
-  through stylized grill flare" - "orchestrating", 
-  "cinematic", "stylized" add atmosphere, not meaning
-BAD: "ritualistic technical stabilization through 
-  mindful dockerizing" - "ritualistic", "mindful", 
-  "symbolic grounding" describe nothing about the 
-  user's actual goal
-
-The label is a technical descriptor, not a caption.
-
-Output JSON with:
-- hidden_intent: Refined inferred intent
-- supporting_primitives: Primitives supporting this inference
-- intent_confidence: 1-10 score
-- alternative_intents: Other possible intents
-- refined_from: Original intent if changed (null if unchanged)
-- refinement_reason: Why refined (null if unchanged)
-- validated_by_outcome: true/false/null - did subsequent frames validate this?
-"""
+Verify or correct the prior label for this frame."""
 
 # Summary prompts
-PRIMITIVE_SUMMARY_PROMPT = """Summarize the primitive states observed in this footage sequence.
+PRIMITIVE_SUMMARY_PROMPT = """Summarize the activities observed in this footage sequence.
 
-## Primitive States (chronological):
+## Activities (chronological):
 {states}
 
-Create a summary that:
-1. Lists the distinct observable actions in order
-2. Notes action frequencies (which actions repeated most)
-3. Identifies action transitions (what tends to follow what)
-4. Highlights any unclear or ambiguous observations
-
-Output a concise summary (1-2 paragraphs) focusing on OBSERVABLE behaviors only.
+In 2-3 sentences, describe the overall activity sequence at a high level. Note significant transitions between different activities. Do not list individual states or frequencies — those are captured in the structured data.
 """
 
 INTENT_SUMMARY_PROMPT = """Summarize the hidden intents inferred from this footage sequence.
 
-## Primitive States Context:
+## Activities Context:
 {primitive_summary}
 
 ## Hidden Intents Inferred:
 {intents}
 
-Create a summary that:
-1. Lists the inferred goals/purposes
-2. Notes confidence levels and supporting evidence
-3. Identifies intent sequences (goal → subgoal patterns)
-4. Highlights ambiguous or conflicting intent inferences
-
-Output a concise summary (1-2 paragraphs) about what the user was trying to accomplish.
+In 2-3 sentences, describe what the user was trying to accomplish at a high level. Note significant transitions between different goals. Do not list individual intents or frequencies — those are captured in the structured data.
 """
 
-CHUNK_PRIMITIVE_SUMMARY_PROMPT = """Summarize this CHUNK of primitive states from a longer footage sequence.
+CHUNK_PRIMITIVE_SUMMARY_PROMPT = """Summarize this CHUNK of activities from a longer footage sequence.
 
 ## Chunk {chunk_num} of {total_chunks} (frames {start_frame}-{end_frame}):
 {states}
 
-Create a concise summary (1-2 paragraphs) of this chunk:
-1. List the distinct observable actions in this segment
-2. Note action frequencies within this chunk
-3. Note the dominant transitions
-
-This is a partial summary that will be merged with other chunks.
+In 2-3 sentences, describe the observable activity in this segment at a high level. Note significant transitions. This is a partial summary that will be merged with other chunks.
 """
 
 CHUNK_INTENT_SUMMARY_PROMPT = """Summarize this CHUNK of hidden intents from a longer footage sequence.
@@ -236,12 +163,7 @@ CHUNK_INTENT_SUMMARY_PROMPT = """Summarize this CHUNK of hidden intents from a l
 ## Chunk {chunk_num} of {total_chunks} (frames {start_frame}-{end_frame}):
 {intents}
 
-Create a concise summary (1-2 paragraphs) of this chunk:
-1. List the inferred goals/purposes in this segment
-2. Note confidence levels
-3. Note dominant intent transitions
-
-This is a partial summary that will be merged with other chunks.
+In 2-3 sentences, describe the user's goals in this segment at a high level. Note significant transitions. This is a partial summary that will be merged with other chunks.
 """
 
 MERGE_SUMMARIES_PROMPT = """Merge these partial summaries into a single coherent summary.
@@ -252,21 +174,25 @@ MERGE_SUMMARIES_PROMPT = """Merge these partial summaries into a single coherent
 ## Partial Summaries (chronological):
 {chunk_summaries}
 
-Create a unified summary (1-2 paragraphs) that:
-1. Combines insights from all chunks into a coherent narrative
-2. Notes overall action/intent frequencies and dominant patterns
-3. Identifies transitions and flow across the full sequence
-4. Preserves the most important details from each chunk
-
-Output a concise summary covering the ENTIRE sequence.
+In 2-3 sentences, combine these chunks into a unified narrative covering the entire sequence. Note the major activities and significant transitions.
 """
 
 
 # Context window helpers
 
 def get_pass_type(pass_num: int) -> str:
-    """Return 'primitive' for odd passes, 'intent' for even passes."""
-    return "primitive" if pass_num % 2 == 1 else "intent"
+    """Return 'activity' for odd passes, 'intent' for even passes."""
+    return "activity" if pass_num % 2 == 1 else "intent"
+
+
+def _pass_type_to_file_key(pass_type: str) -> str:
+    """Map a pass type to its on-disk file/field key.
+
+    On-disk files use 'primitive' (e.g. states_primitive_P1.json) and JSON
+    fields use 'primitive_state'. This helper translates the logical pass type
+    back to the storage key so callers can build paths and read fields correctly.
+    """
+    return "primitive" if pass_type == "activity" else pass_type
 
 
 def get_context_passes(current_pass: int, pass_window_size: int = 2) -> List[int]:
@@ -292,7 +218,7 @@ def get_context_passes(current_pass: int, pass_window_size: int = 2) -> List[int
 
 @dataclass
 class _TemporalRun:
-    """A run of consecutive frames with the same state."""
+    """A run of consecutive frames with the same state label."""
     start_idx: int
     end_idx: int
     state_str: str
@@ -305,17 +231,9 @@ class _TemporalRun:
         return (self.start_idx + self.end_idx) // 2
 
     def format_line(self) -> str:
-        avg_conf = round(self.conf_sum / self.count, 1)
         if self.count == 1:
-            prefix = f"  [{self.start_idx}]"
-        else:
-            prefix = f"  [{self.start_idx}-{self.end_idx}] ({self.count} frames)"
-
-        if self.pass_type == "primitive":
-            line = f"{prefix} {self.state_str} (conf: {avg_conf})"
-        else:
-            line = f"{prefix} Intent: {self.state_str} (conf: {avg_conf})"
-        return line
+            return f"  [{self.start_idx}] {self.state_str}"
+        return f"  [{self.start_idx}-{self.end_idx}] {self.state_str}"
 
 
 def _collapse_to_runs(
@@ -332,7 +250,7 @@ def _collapse_to_runs(
     runs: List[_TemporalRun] = []
     for i, state in enumerate(window):
         frame_idx = start_idx + i
-        if pass_type == "primitive":
+        if pass_type == "activity":
             state_str = state.get("primitive_state", state.get("state", "unknown"))
             conf = float(state.get("confidence", 5))
         else:
@@ -396,7 +314,7 @@ def build_temporal_context(
             all_pass_states[current_pass], back_start, back_end, current_pass_type
         )
         if runs:
-            lines.append(f"\n--- Current pass {current_pass} (backward, {current_pass_type}) ---")
+            lines.append(f"\n<preceding frames=\"{current_pass}\">")
             for run in runs:
                 lines.append(run.format_line())
 
@@ -410,7 +328,7 @@ def build_temporal_context(
             all_pass_states[same_type_prior], fwd_start, fwd_end, prior_type
         )
         if runs:
-            lines.append(f"\n--- Pass {same_type_prior} (forward lookahead, {prior_type}) ---")
+            lines.append(f"\n<surrounding frames=\"{same_type_prior}\">")
             for run in runs:
                 lines.append(run.format_line())
 
@@ -445,7 +363,7 @@ def build_multi_pass_context(
     for pass_num in context_passes:
         pass_type = get_pass_type(pass_num)
 
-        section_lines = [f"\n=== Pass {pass_num} ({pass_type.upper()}) ==="]
+        section_lines = [f"\n<pass num=\"{pass_num}\">"]
 
         # Add summary if available
         if pass_num in all_pass_summaries and all_pass_summaries[pass_num]:
@@ -457,7 +375,7 @@ def build_multi_pass_context(
             state_counts: Dict[str, int] = {}
 
             for s in states:
-                if pass_type == "primitive":
+                if pass_type == "activity":
                     name = s.get("primitive_state", s.get("state", "unknown"))
                 else:
                     name = s.get("hidden_intent", s.get("state", "unknown"))
@@ -465,13 +383,12 @@ def build_multi_pass_context(
 
             sorted_states = sorted(state_counts.items(), key=lambda x: -x[1])[:max_unique_per_pass]
 
-            if pass_type == "primitive":
-                section_lines.append("Primitives:")
-            else:
-                section_lines.append("Intents:")
+            section_lines.append("Labels:")
 
             for name, count in sorted_states:
                 section_lines.append(f"  - {name} ({count}x)")
+
+        section_lines.append("</pass>")
 
         sections.append("\n".join(section_lines))
 

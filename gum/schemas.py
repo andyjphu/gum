@@ -4,17 +4,15 @@ from __future__ import annotations
 from typing import List, Optional, Literal, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
-# =============================================================================
-# STATE EXTRACTION SCHEMAS (for egocentric footage)
-# =============================================================================
+# State extraction schemas (for egocentric footage)
 
-# Pass type enumeration for alternating primitive/intent passes
-PassType = Literal["primitive", "intent"]
+# Pass type enumeration for alternating activity/intent passes
+PassType = Literal["activity", "intent"]
 
 
 class PrimitiveStateSchema(BaseModel):
     """
-    Output from primitive state extraction (odd passes: 1, 3, 5).
+    Output from activity state extraction (odd passes: 1, 3, 5).
     Captures observable physical/behavioral actions.
     """
     primitive_state: str = Field(
@@ -37,7 +35,7 @@ class PrimitiveStateSchema(BaseModel):
 class HiddenIntentSchema(BaseModel):
     """
     Output from hidden intent inference (even passes: 2, 4, 6).
-    Infers underlying goals/intentions from primitive states.
+    Infers underlying goals/intentions from activity states.
     """
     hidden_intent: str = Field(
         ...,
@@ -45,7 +43,7 @@ class HiddenIntentSchema(BaseModel):
     )
     supporting_primitives: List[str] = Field(
         default_factory=list,
-        description="Primitive states that support this intent inference"
+        description="Activity states that support this intent inference"
     )
     intent_confidence: int = Field(
         ..., ge=1, le=10,
@@ -61,27 +59,31 @@ class HiddenIntentSchema(BaseModel):
 
 class RefinedPrimitiveSchema(BaseModel):
     """
-    Output from refined primitive state extraction (passes 3, 5, ...).
-    Refines primitives with context from prior passes.
+    Output from refined activity state extraction (passes 3, 5, ...).
+    Verifies or corrects activities with context from prior passes.
     """
+    changed: bool = Field(
+        ...,
+        description="Whether the label was changed from the prior pass. Set to false unless the prior label is wrong or a synonym."
+    )
     primitive_state: str = Field(
         ...,
-        description="Refined observable action"
+        description="Observable activity — same as prior if changed is false"
     )
     body_position: Optional[str] = Field(None, description="Body posture/position")
     objects_interacted: Optional[List[str]] = Field(default_factory=list)
     confidence: int = Field(..., ge=1, le=10)
     refined_from: Optional[str] = Field(
         None,
-        description="Original primitive if this was refined/collapsed"
+        description="Original activity if changed (null if unchanged)"
     )
     refinement_reason: Optional[str] = Field(
         None,
-        description="Why this primitive was refined (e.g., 'collapsed with walking_slowly')"
+        description="Why this activity was changed (null if unchanged)"
     )
     informed_by_intent: Optional[str] = Field(
         None,
-        description="Hidden intent that informed this refinement"
+        description="Hidden intent that informed this change (null if unchanged)"
     )
 
     model_config = ConfigDict(extra="allow")
@@ -90,17 +92,21 @@ class RefinedPrimitiveSchema(BaseModel):
 class RefinedIntentSchema(BaseModel):
     """
     Output from refined intent inference (passes 4, 6, ...).
-    Refines intents with broader context.
+    Verifies or corrects intents with broader context.
     """
-    hidden_intent: str = Field(..., description="Refined inferred intent/goal")
+    changed: bool = Field(
+        ...,
+        description="Whether the intent was changed from the prior pass. Set to false unless the prior intent is wrong or a synonym."
+    )
+    hidden_intent: str = Field(..., description="Inferred intent/goal — same as prior if changed is false")
     supporting_primitives: List[str] = Field(default_factory=list)
     intent_confidence: int = Field(..., ge=1, le=10)
     alternative_intents: Optional[List[str]] = Field(default_factory=list)
     refined_from: Optional[str] = Field(
         None,
-        description="Original intent if refined"
+        description="Original intent if changed (null if unchanged)"
     )
-    refinement_reason: Optional[str] = Field(None)
+    refinement_reason: Optional[str] = Field(None, description="Why changed (null if unchanged)")
     validated_by_outcome: Optional[bool] = Field(
         None,
         description="Whether subsequent frames validated or invalidated this intent"
@@ -123,9 +129,7 @@ class PassSummary(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-# =============================================================================
-# AUDIT SCHEMA
-# =============================================================================
+# Audit schema
 
 class AuditSchema(BaseModel):
     """

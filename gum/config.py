@@ -18,11 +18,9 @@ TRAFFIC_LOG_DIR = Path(os.getenv("GUM_TRAFFIC_LOG_DIR", SHARED_DIR / "log"))
 # to store images taken ahead of run to be analyzed retroactively
 RETRO_IMAGES_DIR = Path(os.getenv("GUM_RETRO_IMAGES_DIR", SHARED_DIR / "screenshots"))
 
-# =============================================================================
-# Multi-pass configuration (alternating primitive/intent architecture)
-# =============================================================================
+# Multi-pass configuration (alternating activity/intent architecture)
 
-# Odd passes extract primitives, even passes infer intents.
+# Odd passes extract activities, even passes infer intents.
 # Each pass sees the previous pass_window_size passes as context.
 DEFAULT_NUM_PASSES = int(os.getenv("GUM_NUM_PASSES", "6"))
 

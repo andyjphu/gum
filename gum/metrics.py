@@ -1,5 +1,5 @@
 # metrics.py
-# Clustering and analysis metrics for multi-pass primitive/intent extraction
+# Clustering and analysis metrics for multi-pass activity/intent extraction
 #
 # Computes metrics to understand:
 # - State/intent distribution and diversity
@@ -15,30 +15,28 @@ from typing import Dict, List, Any, Optional, Tuple
 import json
 
 
-# =============================================================================
-# PRIMITIVE STATE METRICS
-# =============================================================================
+# Activity state metrics
 
-def compute_primitive_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
+def compute_activity_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Compute metrics for primitive state extraction.
+    Compute metrics for activity state extraction.
 
     Args:
-        states: List of primitive state dicts from a single pass
+        states: List of activity state dicts from a single pass
 
     Returns:
-        Dict containing various primitive metrics
+        Dict containing various activity metrics
     """
     if not states:
         return {"error": "No states provided"}
 
-    # Extract primitive states
-    primitives = [s.get("primitive_state", "unknown") for s in states]
+    # Extract activity states (field name remains 'primitive_state' in JSON data)
+    activities = [s.get("primitive_state", "unknown") for s in states]
     confidences = [s.get("confidence", 5) for s in states]
 
     # Frequency distribution
-    freq = Counter(primitives)
-    total = len(primitives)
+    freq = Counter(activities)
+    total = len(activities)
 
     # Entropy (diversity measure)
     entropy = 0.0
@@ -74,8 +72,8 @@ def compute_primitive_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     return {
         "total_frames": total,
-        "unique_primitives": len(freq),
-        "primitive_frequency": dict(freq.most_common()),
+        "unique_activities": len(freq),
+        "activity_frequency": dict(freq.most_common()),
         "entropy": round(entropy, 3),
         "normalized_entropy": round(normalized_entropy, 3),
         "avg_confidence": round(avg_confidence, 2),
@@ -84,16 +82,16 @@ def compute_primitive_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
         "refinement_rate": round(refinement_rate, 3),
         "body_position_frequency": dict(body_freq.most_common()),
         "object_frequency": dict(object_freq.most_common(20)),
-        "top_primitives": freq.most_common(10),
+        "top_activities": freq.most_common(10),
     }
 
 
-def compute_primitive_transitions(states: List[Dict[str, Any]]) -> Dict[str, Any]:
+def compute_activity_transitions(states: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Compute state transition matrix for primitives.
+    Compute state transition matrix for activities.
 
     Args:
-        states: List of primitive state dicts (chronological order)
+        states: List of activity state dicts (chronological order)
 
     Returns:
         Transition matrix and related metrics
@@ -101,22 +99,22 @@ def compute_primitive_transitions(states: List[Dict[str, Any]]) -> Dict[str, Any
     if len(states) < 2:
         return {"error": "Need at least 2 states for transitions"}
 
-    primitives = [s.get("primitive_state", "unknown") for s in states]
+    activities = [s.get("primitive_state", "unknown") for s in states]
 
     # Build transition counts using primary states
     transitions: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    for i in range(len(primitives) - 1):
-        if primitives[i] != primitives[i + 1]:
-            transitions[primitives[i]][primitives[i + 1]] += 1
+    for i in range(len(activities) - 1):
+        if activities[i] != activities[i + 1]:
+            transitions[activities[i]][activities[i + 1]] += 1
 
     # Convert to regular dict for JSON serialization
     transition_matrix = {k: dict(v) for k, v in transitions.items()}
 
     # Compute self-transition rate (same primary state between frames)
     self_transitions = sum(
-        1 for i in range(len(primitives) - 1) if primitives[i] == primitives[i + 1]
+        1 for i in range(len(activities) - 1) if activities[i] == activities[i + 1]
     )
-    total_transitions = len(primitives) - 1
+    total_transitions = len(activities) - 1
     self_transition_rate = self_transitions / total_transitions if total_transitions > 0 else 0
 
     # Most common transitions
@@ -134,9 +132,7 @@ def compute_primitive_transitions(states: List[Dict[str, Any]]) -> Dict[str, Any
     }
 
 
-# =============================================================================
-# HIDDEN INTENT METRICS
-# =============================================================================
+# Hidden intent metrics
 
 def compute_intent_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
@@ -186,7 +182,7 @@ def compute_intent_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
     )
     ambiguity_rate = states_with_alternatives / total if total > 0 else 0
 
-    # Supporting primitives analysis
+    # Supporting activities analysis
     supporting_counts = []
     for s in states:
         supporting = s.get("supporting_primitives", [])
@@ -206,14 +202,12 @@ def compute_intent_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
         "validation_rate": round(validation_rate, 3),
         "invalidation_rate": round(invalidation_rate, 3),
         "ambiguity_rate": round(ambiguity_rate, 3),
-        "avg_supporting_primitives": round(avg_supporting, 2),
+        "avg_supporting_activities": round(avg_supporting, 2),
         "top_intents": freq.most_common(10),
     }
 
 
-# =============================================================================
-# CROSS-PASS METRICS
-# =============================================================================
+# Cross-pass metrics
 
 def compute_pass_convergence(
     all_pass_states: Dict[int, List[Dict[str, Any]]]
@@ -234,9 +228,9 @@ def compute_pass_convergence(
 
     pass_nums = sorted(all_pass_states.keys())
     metrics = {
-        "primitive_stability": [],
+        "activity_stability": [],
         "intent_stability": [],
-        "unique_count_trend": {"primitives": [], "intents": []},
+        "unique_count_trend": {"activities": [], "intents": []},
     }
 
     for i in range(1, len(pass_nums)):
@@ -250,24 +244,24 @@ def compute_pass_convergence(
             continue
 
         # Determine pass type
-        is_primitive = curr_pass % 2 == 1
+        is_activity = curr_pass % 2 == 1
 
-        if is_primitive:
-            prev_prims = [s.get("primitive_state", "unknown") for s in prev_states if "primitive_state" in s]
-            curr_prims = [s.get("primitive_state", "unknown") for s in curr_states]
+        if is_activity:
+            prev_acts = [s.get("primitive_state", "unknown") for s in prev_states if "primitive_state" in s]
+            curr_acts = [s.get("primitive_state", "unknown") for s in curr_states]
 
-            if prev_prims and curr_prims and len(prev_prims) == len(curr_prims):
-                matches = sum(1 for p, c in zip(prev_prims, curr_prims) if p == c)
-                stability = matches / len(curr_prims)
-                metrics["primitive_stability"].append({
+            if prev_acts and curr_acts and len(prev_acts) == len(curr_acts):
+                matches = sum(1 for p, c in zip(prev_acts, curr_acts) if p == c)
+                stability = matches / len(curr_acts)
+                metrics["activity_stability"].append({
                     "from_pass": prev_pass,
                     "to_pass": curr_pass,
                     "stability": round(stability, 3)
                 })
 
-            metrics["unique_count_trend"]["primitives"].append({
+            metrics["unique_count_trend"]["activities"].append({
                 "pass": curr_pass,
-                "unique_count": len(set(curr_prims))
+                "unique_count": len(set(curr_acts))
             })
         else:
             prev_intents = [s.get("hidden_intent", "unknown") for s in prev_states if "hidden_intent" in s]
@@ -288,9 +282,9 @@ def compute_pass_convergence(
             })
 
     # Compute overall convergence score
-    if metrics["primitive_stability"]:
-        prim_stabilities = [m["stability"] for m in metrics["primitive_stability"]]
-        metrics["avg_primitive_stability"] = round(sum(prim_stabilities) / len(prim_stabilities), 3)
+    if metrics["activity_stability"]:
+        act_stabilities = [m["stability"] for m in metrics["activity_stability"]]
+        metrics["avg_activity_stability"] = round(sum(act_stabilities) / len(act_stabilities), 3)
 
     if metrics["intent_stability"]:
         intent_stabilities = [m["stability"] for m in metrics["intent_stability"]]
@@ -299,84 +293,82 @@ def compute_pass_convergence(
     return metrics
 
 
-def compute_primitive_intent_alignment(
-    primitive_states: List[Dict[str, Any]],
+def compute_activity_intent_alignment(
+    activity_states: List[Dict[str, Any]],
     intent_states: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
-    Compute alignment between primitives and inferred intents.
+    Compute alignment between activities and inferred intents.
 
     Args:
-        primitive_states: List of primitive states
+        activity_states: List of activity states
         intent_states: List of intent states (same frames)
 
     Returns:
         Alignment metrics
     """
-    if len(primitive_states) != len(intent_states):
+    if len(activity_states) != len(intent_states):
         return {"error": "Mismatched state counts"}
 
-    total = len(primitive_states)
+    total = len(activity_states)
     if total == 0:
         return {"error": "No states provided"}
 
-    # Build primitive-to-intent mapping
-    prim_to_intents: Dict[str, List[str]] = defaultdict(list)
-    intent_to_prims: Dict[str, List[str]] = defaultdict(list)
+    # Build activity-to-intent mapping
+    act_to_intents: Dict[str, List[str]] = defaultdict(list)
+    intent_to_acts: Dict[str, List[str]] = defaultdict(list)
 
-    for prim_s, intent_s in zip(primitive_states, intent_states):
-        prim = prim_s.get("primitive_state", "unknown")
+    for act_s, intent_s in zip(activity_states, intent_states):
+        act = act_s.get("primitive_state", "unknown")
         intent = intent_s.get("hidden_intent", "unknown")
-        prim_to_intents[prim].append(intent)
-        intent_to_prims[intent].append(prim)
+        act_to_intents[act].append(intent)
+        intent_to_acts[intent].append(act)
 
-    # Compute primitive-intent consistency
-    # (Do similar primitives map to similar intents?)
-    prim_consistency = {}
-    for prim, intents in prim_to_intents.items():
+    # Compute activity-intent consistency
+    # (Do similar activities map to similar intents?)
+    act_consistency = {}
+    for act, intents in act_to_intents.items():
         intent_freq = Counter(intents)
         if len(intent_freq) > 0:
             top_intent, top_count = intent_freq.most_common(1)[0]
             consistency = top_count / len(intents)
-            prim_consistency[prim] = {
+            act_consistency[act] = {
                 "top_intent": top_intent,
                 "consistency": round(consistency, 3),
                 "intent_distribution": dict(intent_freq)
             }
 
-    # Compute intent-primitive consistency
+    # Compute intent-activity consistency
     intent_consistency = {}
-    for intent, prims in intent_to_prims.items():
-        prim_freq = Counter(prims)
-        if len(prim_freq) > 0:
-            top_prim, top_count = prim_freq.most_common(1)[0]
-            consistency = top_count / len(prims)
+    for intent, acts in intent_to_acts.items():
+        act_freq = Counter(acts)
+        if len(act_freq) > 0:
+            top_act, top_count = act_freq.most_common(1)[0]
+            consistency = top_count / len(acts)
             intent_consistency[intent] = {
-                "top_primitive": top_prim,
+                "top_activity": top_act,
                 "consistency": round(consistency, 3),
-                "primitive_distribution": dict(prim_freq)
+                "activity_distribution": dict(act_freq)
             }
 
     # Average consistency scores
-    avg_prim_consistency = sum(
-        v["consistency"] for v in prim_consistency.values()
-    ) / len(prim_consistency) if prim_consistency else 0
+    avg_act_consistency = sum(
+        v["consistency"] for v in act_consistency.values()
+    ) / len(act_consistency) if act_consistency else 0
 
     avg_intent_consistency = sum(
         v["consistency"] for v in intent_consistency.values()
     ) / len(intent_consistency) if intent_consistency else 0
 
     return {
-        "primitive_to_intent_mapping": prim_consistency,
-        "intent_to_primitive_mapping": intent_consistency,
-        "avg_primitive_consistency": round(avg_prim_consistency, 3),
+        "activity_to_intent_mapping": act_consistency,
+        "intent_to_activity_mapping": intent_consistency,
+        "avg_activity_consistency": round(avg_act_consistency, 3),
         "avg_intent_consistency": round(avg_intent_consistency, 3),
     }
 
 
-# =============================================================================
-# AGGREGATE METRICS
-# =============================================================================
+# Aggregate metrics
 
 def compute_all_metrics(
     all_pass_states: Dict[int, List[Dict[str, Any]]],
@@ -401,13 +393,13 @@ def compute_all_metrics(
 
     # Per-pass metrics
     for pass_num, states in sorted(all_pass_states.items()):
-        pass_type = "primitive" if pass_num % 2 == 1 else "intent"
+        pass_type = "activity" if pass_num % 2 == 1 else "intent"
 
-        if pass_type == "primitive":
+        if pass_type == "activity":
             metrics["passes"][f"pass_{pass_num}"] = {
-                "type": "primitive",
-                "metrics": compute_primitive_metrics(states),
-                "transitions": compute_primitive_transitions(states),
+                "type": "activity",
+                "metrics": compute_activity_metrics(states),
+                "transitions": compute_activity_transitions(states),
             }
         else:
             metrics["passes"][f"pass_{pass_num}"] = {
@@ -418,15 +410,15 @@ def compute_all_metrics(
     # Convergence metrics
     metrics["convergence"] = compute_pass_convergence(all_pass_states)
 
-    # Alignment metrics (compare latest primitive and intent passes)
-    primitive_passes = [p for p in all_pass_states.keys() if p % 2 == 1]
+    # Alignment metrics (compare latest activity and intent passes)
+    activity_passes = [p for p in all_pass_states.keys() if p % 2 == 1]
     intent_passes = [p for p in all_pass_states.keys() if p % 2 == 0]
 
-    if primitive_passes and intent_passes:
-        latest_prim = max(primitive_passes)
+    if activity_passes and intent_passes:
+        latest_act = max(activity_passes)
         latest_intent = max(intent_passes)
-        metrics["alignment"] = compute_primitive_intent_alignment(
-            all_pass_states[latest_prim],
+        metrics["alignment"] = compute_activity_intent_alignment(
+            all_pass_states[latest_act],
             all_pass_states[latest_intent]
         )
 
@@ -439,9 +431,7 @@ def save_metrics_json(metrics: Dict[str, Any], filepath: str) -> None:
         json.dump(metrics, f, indent=2, default=str)
 
 
-# =============================================================================
-# VISUALIZATION DATA EXPORT
-# =============================================================================
+# Visualization data export
 
 def export_for_visualization(
     all_pass_states: Dict[int, List[Dict[str, Any]]],
@@ -472,14 +462,14 @@ def export_for_visualization(
 
     # Build timeline data
     for pass_num, states in sorted(all_pass_states.items()):
-        pass_type = "primitive" if pass_num % 2 == 1 else "intent"
+        pass_type = "activity" if pass_num % 2 == 1 else "intent"
 
         for idx, state in enumerate(states):
-            if pass_type == "primitive":
+            if pass_type == "activity":
                 entry = {
                     "frame": idx,
                     "pass": pass_num,
-                    "type": "primitive",
+                    "type": "activity",
                     "value": state.get("primitive_state", "unknown"),
                     "confidence": state.get("confidence", 5),
                     "body_position": state.get("body_position"),
@@ -499,11 +489,11 @@ def export_for_visualization(
                 viz_data["timeline"].append(entry)
 
     # Build Sankey diagram data for transitions (using state-sets)
-    # Use the latest primitive pass
-    primitive_passes = [p for p in all_pass_states.keys() if p % 2 == 1]
-    if primitive_passes:
-        latest_prim = max(primitive_passes)
-        states = all_pass_states[latest_prim]
+    # Use the latest activity pass
+    activity_passes = [p for p in all_pass_states.keys() if p % 2 == 1]
+    if activity_passes:
+        latest_act = max(activity_passes)
+        states = all_pass_states[latest_act]
 
         # Build nodes (unique states)
         all_state_names = set()
@@ -529,8 +519,8 @@ def export_for_visualization(
 
     # Build confidence matrix (pass x frame)
     for pass_num, states in sorted(all_pass_states.items()):
-        pass_type = "primitive" if pass_num % 2 == 1 else "intent"
-        conf_key = "confidence" if pass_type == "primitive" else "intent_confidence"
+        pass_type = "activity" if pass_num % 2 == 1 else "intent"
+        conf_key = "confidence" if pass_type == "activity" else "intent_confidence"
 
         confidences = [s.get(conf_key, 5) for s in states]
         viz_data["confidence_matrix"].append({
@@ -542,9 +532,9 @@ def export_for_visualization(
 
     # Build pass comparison data
     for pass_num, states in sorted(all_pass_states.items()):
-        pass_type = "primitive" if pass_num % 2 == 1 else "intent"
+        pass_type = "activity" if pass_num % 2 == 1 else "intent"
 
-        if pass_type == "primitive":
+        if pass_type == "activity":
             unique = set(s.get("primitive_state") for s in states)
             refined = sum(1 for s in states if s.get("refined_from"))
         else:
